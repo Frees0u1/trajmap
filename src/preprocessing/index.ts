@@ -3,7 +3,7 @@
  * Handles polyline decoding and configuration setup
  */
 
-import { LatLng, RenderConfig, PreprocessingResult } from '../types';
+import { LatLng, TrajmapConfig, PreprocessingResult } from '../types';
 import { PolylineUtil } from '../utils/polyline';
 import { ValidationUtil } from '../utils/validation';
 
@@ -14,7 +14,7 @@ export class PreprocessingService {
   /**
    * Process input polyline and configuration
    */
-  static process(config: RenderConfig): PreprocessingResult {
+  static process(config: TrajmapConfig): PreprocessingResult {
     // Validate polyline
     if (!PolylineUtil.validate(config.polyline)) {
       throw new Error('Invalid polyline format');
@@ -33,7 +33,7 @@ export class PreprocessingService {
     }
 
     // Apply default configuration (no default expansion region)
-    const processedConfig: RenderConfig = {
+    const processedConfig: TrajmapConfig = {
       ...config,
       lineColor: config.lineColor || '#FF0000',
       lineWidth: config.lineWidth || 3,
@@ -49,7 +49,7 @@ export class PreprocessingService {
   /**
    * Validate configuration
    */
-  static validateConfig(config: RenderConfig): void {
+  static validateConfig(config: TrajmapConfig): void {
     if (!config.polyline) {
       throw new Error('Polyline is required');
     }

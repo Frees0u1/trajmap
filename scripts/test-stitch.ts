@@ -1,7 +1,7 @@
 #!/usr/bin/env ts-node
 /**
- * 拼接裁剪测试脚本
- * 使用StitchingService和ProjectionService实现瓦片拼接、裁剪和轨迹投影
+ * Stitching and cropping test script
+ * Uses StitchingService and ProjectionService to implement tile stitching, cropping and trajectory projection
  */
 
 import { createCanvas, loadImage, Canvas, CanvasRenderingContext2D } from 'canvas';
@@ -9,7 +9,7 @@ import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// 导入项目模块
+// Import project modules
 import { PolylineUtil } from '../src/utils/polyline';
 import { BoundaryService } from '../src/boundary';
 import { TileService } from '../src/tiles';
@@ -29,7 +29,7 @@ import {
 } from '../src/types';
 
 /**
- * 配置参数
+ * Configuration parameters
  */
 interface StitchTestConfig {
   polyline: string;
@@ -41,10 +41,10 @@ interface StitchTestConfig {
 }
 
 /**
- * 默认配置
+ * Default configuration
  */
 const defaultConfig: StitchTestConfig = {
-  // 示例polyline
+  // Example polyline
   polyline: '}t~FqypxRiEx@@sGmBAsCxMkGvMFxDfCnFtT`GbTpN~@iAzUqLpT_GnReNhq@{AdEoAhD_Ev@uDtBsz@hAeL~Vuh@j@uD]yNfA_G~_@ah@Wq@t@VdCyDyC|DwAmCoDiBMeJkCyFlIyCjEWo@eRx@kCgDiEtB}CKaFmOeBAkGo@gKyFg@cX{MlDiJiBm@qAgC{AIjIwQ|DuDc@`@dWgd@uSwLmEsFiAyKnDuMsB}GcKyN}PhO{O~J_WvJiLjCiAYk@gHvB{@eA}@V}DiAaHG{KrAkDnFqH}@sAb@oAgAcDmGqES_]bAwe@}F{t@{Ioe@cBaDiCmMQyHyLe^i@_H}BkE}H{_@a@qKuD}TmB{VgCkF@qHwCuFgY}cAI{Io@uKeS{o@{DqSsG_MxHcEmDmMCaEuDuTy@oh@}BoCsRgK`Pgb@|DaRp@PhCaFxXyz@dBoLmA{[pJgZG}MkBuDeFeDu\\{BemF_cBqN[oIlEcH`OaCnHVg@h@bAqQpi@gLjUoCjM_Ujr@c@A^kBkCBeAfEgLMsDyDaDzBq^lL{SdEyDjCsKzCuO`J_DxEuAbOgAnF}HfY|BpAzBdDxI|@f@YWiAhA[|@pCzCG_Axb@fC~JfDvF`InCrc@{@hGdArT~RDdAcFxFxKrKeS|RhHlIeE|EChBrIrEuDdHaCl[HzJ|@j@pBh[_@vHuCnKkKbUwPtVgRzULbAtMpFyNsD{JxRaYhMgPfSpFjG}TrScCo@gHvGqAWqB~AmLjQqIxHiAlGgDjHuPtPyFlQwPdDkGhI_ApEOtCn@~@fNJdJhDE|AiFxHkDzJQnR|TjUhJdSjG~DrTjBbSrG_@zCtA`@}BhFtD|CNpFgAbM|DnXY~NoQw@cLpDoHCmAu@eJjDcc@uDOhAtJpQtS`V~A~Da@rIeLrSaGeDwGa@mHiE{GaBoYx@_Io@uYkMmAt@dA|@kUtk@wJ~HbN`K_CjFfA|BZdHlKA`FqAlVpT_F`Fu@xELtBxGlEtBtEiCtNhFxRwDxMlo@vVGpAz@j@gDhPwPbXqA`FMtG~B`\\cIhYk@~FvB`LdCvFmBvJmCdCkCdHpBvSjQzx@hBlQ|FjWIzf@zEpYqCnw@yGnUpAxUtGt@zd@mArZlCv^hHz@rADlG|b@uDbWoLhT_PjBmEbGkCkCeG\\iApK_Dzh@{Fzf@sXxGYbMnBfReAhJwGfv@m\\lKgI~Af@dHsK|\\mUjZwBh^Cxe@{BpMsJ|J}BlJyEbLwIvNaQhn@cOsB~@}DuD{NkHsJoDmI}@gCiHEmCnFqNtBeO~AD',
   outputPath: './output/test-stitch.png',
   trackRegion: {
@@ -59,7 +59,7 @@ const defaultConfig: StitchTestConfig = {
 };
 
 /**
- * 拼接测试类
+ * Stitching test class
  */
 class StitchTester {
   private config: StitchTestConfig;
@@ -75,33 +75,33 @@ class StitchTester {
   }
 
   /**
-   * 运行完整测试流程
+   * Run complete test workflow
    */
   async run(): Promise<void> {
     try {
-      console.log('🚀 开始拼接裁剪测试...');
+      console.log('🚀 Starting stitching and cropping test...');
       
-      // 1. 解析polyline
+      // 1. Parse polyline
       await this.parsePolyline();
       
-      // 2. 计算边界
+      // 2. Calculate boundaries
       await this.calculateBounds();
       
-      // 3. 获取瓦片数据
+      // 3. Get tile data
       await this.fetchTiles();
       
-      // 4. 使用StitchingService进行拼接裁剪
+      // 4. Use StitchingService for stitching and cropping
       await this.stitchAndCrop();
       
-      // 5. 使用ProjectionService进行轨迹投影
+      // 5. Use ProjectionService for trajectory projection
       await this.projectTrajectory();
       
-      // 6. 保存最终结果
+      // 6. Save final result
       await this.saveResult();
       
-      console.log('✅ 测试完成！输出文件:', this.config.outputPath);
+      console.log('✅ Test completed! Output file:', this.config.outputPath);
     } catch (error) {
-      console.error('❌ 测试失败:', error);
+      console.error('❌ Test failed:', error);
       throw error;
     }
   }
@@ -222,14 +222,15 @@ class StitchTester {
     console.log('🎯 投影GPS轨迹到地图...');
     
     try {
-      const trackRegion = this.config.trackRegion
-      
+      const width =  this.stitchingResult.pixelBounds.maxX - this.stitchingResult.pixelBounds.minX
+      const height = this.stitchingResult.pixelBounds.maxY - this.stitchingResult.pixelBounds.minY
       // 使用ProjectionService进行轨迹投影
       this.projectionResult = await ProjectionService.projectTrajectory(
         this.gpsPoints,
         this.stitchingResult.image,
         this.stitchingResult.bounds,
-        trackRegion,
+        width,
+        height,
         this.zoom,
         this.config.lineColor,
         this.config.lineWidth

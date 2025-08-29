@@ -18,7 +18,8 @@ export class ProjectionService {
     gpsPoints: LatLng[],
     mapImage: Buffer,
     mapBounds: GeoBounds,
-    trackRegion: TrackRegion,
+    imageWidth: number,
+    imageHeight: number,
     zoom: number,
     lineColor: string = '#FF5500',
     lineWidth: number = 3
@@ -29,11 +30,11 @@ export class ProjectionService {
 
     // Convert GPS points to pixel coordinates
     const pixelPoints = gpsPoints.map(point => 
-      MercatorUtil.latLngToPixel(point, mapBounds, mapImage.width, trackRegion.height, zoom)
+      MercatorUtil.latLngToPixel(point, mapBounds, imageWidth, imageHeight, zoom)
     );
 
     // Validate pixel points are within image bounds
-    ProjectionService.validatePixelPoints(pixelPoints, trackRegion.width, trackRegion.height);
+    ProjectionService.validatePixelPoints(pixelPoints, imageWidth, imageHeight);
 
     // Create canvas from map image
     const image = await loadImage(mapImage);

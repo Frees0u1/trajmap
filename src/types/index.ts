@@ -67,7 +67,7 @@ export interface TileGrid {
 }
 
 // Rendering configuration
-export interface RenderConfig {
+export interface TrajmapConfig {
   polyline: string;
   trackRegion: TrackRegion;
   expansionRegion?: ExpansionRegion;
@@ -80,7 +80,7 @@ export interface RenderConfig {
 // Processing result interfaces
 export interface PreprocessingResult {
   gpsPoints: LatLng[];
-  config: RenderConfig;
+  config: TrajmapConfig;
 }
 
 export interface BoundaryResult {
@@ -104,4 +104,9 @@ export interface StitchingResult {
 
 export interface ProjectionResult {
   finalImage: Buffer;
+}
+
+export interface RenderResult {
+  data: string; // base64 encoded image
+  points: PixelPoint[]; // trajectory points in pixel coordinates
 }
