@@ -18,7 +18,6 @@ class E2ETest {
     this.polyline = polyline;
     this.outputPath = outputPath || path.join(__dirname, '../output/e2e-test.png');
     this.trajmapConfig = config || {
-      polyline: polyline,
       trackRegion: { width: 100, height: 100 },
       expansionRegion: { downPercent: 0.5 },
       output: this.outputPath,
@@ -52,7 +51,7 @@ class E2ETest {
       console.log('🎨 Starting rendering process...');
       const startTime = Date.now();
       
-      const result = await TrajMap.render(this.trajmapConfig);
+      const result = await TrajMap.render(this.polyline, this.trajmapConfig);
       
       const endTime = Date.now();
       const duration = endTime - startTime;
@@ -111,7 +110,6 @@ async function main() {
   
   const outputPath = './output/test.png';
   const config = {
-    polyline: polyline,
     trackRegion: {
       width: 800,
       height: 800

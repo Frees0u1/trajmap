@@ -13,15 +13,17 @@ import { ValidationUtil } from '../utils/validation';
 export class PreprocessingService {
   /**
    * Process input polyline and configuration
+   * @param polyline - Encoded polyline string
+   * @param config - Rendering configuration
    */
-  static process(config: TrajmapConfig): PreprocessingResult {
+  static process(polyline: string, config: TrajmapConfig): PreprocessingResult {
     // Validate polyline
-    if (!PolylineUtil.validate(config.polyline)) {
+    if (!PolylineUtil.validate(polyline)) {
       throw new Error('Invalid polyline format');
     }
 
     // Decode polyline to GPS points
-    const gpsPoints = PolylineUtil.decode(config.polyline);
+    const gpsPoints = PolylineUtil.decode(polyline);
     
     if (gpsPoints.length === 0) {
       throw new Error('No GPS points found in polyline');
@@ -50,10 +52,6 @@ export class PreprocessingService {
    * Validate configuration
    */
   static validateConfig(config: TrajmapConfig): void {
-    if (!config.polyline) {
-      throw new Error('Polyline is required');
-    }
-
     if (!config.trackRegion) {
       throw new Error('Track region is required');
     }

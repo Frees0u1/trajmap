@@ -35,18 +35,20 @@ import { PreprocessingService } from './preprocessing';
 export class TrajMap {
   /**
    * Render GPS trajectory to map image
+   * @param polyline - Encoded polyline string representing GPS trajectory
+   * @param config - Rendering configuration options
    */
-  static async render(trajmapConfig: TrajmapConfig): Promise<RenderResult> {
+  static async render(polyline: string, config: TrajmapConfig): Promise<RenderResult> {
     try {
       // Step 1: Preprocessing - decode polyline and validate config
-      const preprocessingResult = PreprocessingService.process(trajmapConfig);
-      const { gpsPoints, config } = preprocessingResult;
+      const preprocessingResult = PreprocessingService.process(polyline, config);
+      const { gpsPoints, config: validatedConfig } = preprocessingResult;
 
       // Step 2: Boundary determination - calculate bounds and zoom
       const boundaryResult = BoundaryService.calculateBounds(
         gpsPoints,
-        config.trackRegion,
-        config.expansionRegion
+        validatedConfig.trackRegion,
+        validatedConfig.expansionRegion
       );
       const { bounds } = boundaryResult;
 
@@ -58,7 +60,7 @@ export class TrajMap {
       // Step 4: Tile fetching - get tile data
       const fetchedTileGrid = await TileService.fetchTileGrid(
         tileGrid,
-        config.retina || false
+        validatedConfig.retina || false
       );
 
       // Step 5: Stitching and cropping - create base map image
@@ -73,11 +75,11 @@ export class TrajMap {
       const imageHeight = stitchingResult.pixelBounds.maxY - stitchingResult.pixelBounds.minY;
       
       // Calculate target dimensions based on trackRegion and expansionRegion
-      let targetWidth = config.trackRegion.width;
-      let targetHeight = config.trackRegion.height;
+      let targetWidth = validatedConfig.trackRegion.width;
+      let targetHeight = validatedConfig.trackRegion.height;
       
-      if (config.expansionRegion) {
-        const expansion = config.expansionRegion;
+      if (validatedConfig.expansionRegion) {
+        const expansion = validatedConfig.expansionRegion;
         const leftExpansion = (expansion.leftPercent || 0) * targetWidth;
         const rightExpansion = (expansion.rightPercent || 0) * targetWidth;
         const upExpansion = (expansion.upPercent || 0) * targetHeight;
@@ -94,13 +96,13 @@ export class TrajMap {
         imageWidth,
         imageHeight,
         tileResult.zoom,
-        config
+        validatedConfig
       );
 
       // Step 7: Format final result using RenderService
       return await RenderService.formatResult(
         projectionResult,
-        config,
+        validatedConfig,
         zoom
       );
     } catch (error) {

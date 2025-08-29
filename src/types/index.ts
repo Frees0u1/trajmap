@@ -68,7 +68,6 @@ export interface TileGrid {
 
 // Rendering configuration
 export interface TrajmapConfig {
-  polyline: string;
   trackRegion: TrackRegion;
   expansionRegion?: ExpansionRegion;
   output: string;
