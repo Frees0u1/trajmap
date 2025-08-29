@@ -54,7 +54,7 @@ export class TrajMap {
       // Step 4: Tile fetching - get tile data
       const fetchedTileGrid = await TileService.fetchTileGrid(
         tileGrid,
-        processedConfig.tileProvider || 'osm'
+        processedConfig.retina || false
       );
 
       // Step 5: Stitching and cropping - create base map image
@@ -86,13 +86,6 @@ export class TrajMap {
    */
   static validateConfig(config: RenderConfig): void {
     PreprocessingService.validateConfig(config);
-  }
-
-  /**
-   * Get supported tile providers
-   */
-  static getSupportedProviders(): string[] {
-    return ['osm', 'openstreetmap', 'google', 'google-satellite'];
   }
 
   /**

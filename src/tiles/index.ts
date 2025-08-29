@@ -53,36 +53,21 @@ export class TileService {
   }
 
   /**
-   * Get tile URL for different providers
+   * Get tile URL from CartoCD provider with retina support
    */
-  static getTileUrl(coord: TileCoord, provider: string = 'osm'): string {
+  static getTileUrl(coord: TileCoord, retina: boolean = true): string {
     const { x, y, z } = coord;
-
-    switch (provider.toLowerCase()) {
-      case 'osm':
-      case 'openstreetmap':
-        return `https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
-      
-      case 'google':
-        return `https://mt1.google.com/vt/lyrs=m&x=${x}&y=${y}&z=${z}`;
-      
-      case 'google-satellite':
-        return `https://mt1.google.com/vt/lyrs=s&x=${x}&y=${y}&z=${z}`;
-      
-      case 'bing':
-        // Bing uses quadkey system, would need conversion
-        throw new Error('Bing tile provider not implemented yet');
-      
-      default:
-        throw new Error(`Unknown tile provider: ${provider}`);
-    }
+    const retinaParam = retina ? '@2x' : '';
+    
+    // Use CartoDB Voyager style with retina support
+    return `https://c.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}${retinaParam}.png`;
   }
 
   /**
    * Fetch tile data from URL
    */
-  static async fetchTile(coord: TileCoord, provider: string = 'osm'): Promise<TileData> {
-    const url = TileService.getTileUrl(coord, provider);
+  static async fetchTile(coord: TileCoord, retina: boolean = true): Promise<TileData> {
+    const url = TileService.getTileUrl(coord, retina);
     
     try {
       // Note: In a real implementation, you would use fetch or axios here
@@ -102,9 +87,9 @@ export class TileService {
   /**
    * Fetch all tiles in a grid
    */
-  static async fetchTileGrid(tileGrid: TileGrid, provider: string = 'osm'): Promise<TileGrid> {
+  static async fetchTileGrid(tileGrid: TileGrid, retina: boolean = true): Promise<TileGrid> {
     const fetchPromises = tileGrid.tiles.map(tile => 
-      TileService.fetchTile(tile.coord, provider)
+      TileService.fetchTile(tile.coord, retina)
     );
 
     try {

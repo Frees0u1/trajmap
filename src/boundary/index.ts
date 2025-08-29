@@ -34,7 +34,7 @@ export class BoundaryService {
     bounds = GeoUtil.adjustBoundsToAspectRatio(bounds, trackRegion);
 
     // Calculate appropriate zoom level
-    const zoom = GeoUtil.calculateZoom(bounds, trackRegion.width, trackRegion.height);
+    const zoom = GeoUtil.calculateZoom(bounds);
 
     return {
       bounds,

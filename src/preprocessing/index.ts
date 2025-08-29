@@ -29,10 +29,10 @@ export class PreprocessingService {
     // Apply default configuration
     const processedConfig: RenderConfig = {
       ...config,
-      lineColor: config.lineColor || '#FF5500',
+      lineColor: config.lineColor || '#FF0000',
       lineWidth: config.lineWidth || 3,
-      tileProvider: config.tileProvider || 'osm',
-      expansionRegion: config.expansionRegion || {}
+      retina: config.retina !== undefined ? config.retina : false,
+      expansionRegion: config.expansionRegion || { up: 0.1, down: 0.1, left: 0.1, right: 0.1 }
     };
 
     return {

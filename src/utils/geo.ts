@@ -82,7 +82,6 @@ export class GeoUtil {
     if (currentRatio < targetRatio) {
       // Need to expand width (longitude)
       const newLngRange = latRange * targetRatio;
-      const lngExpansion = (newLngRange - lngRange) / 2;
       return {
         minLat: bounds.minLat,
         maxLat: bounds.maxLat,
@@ -92,7 +91,6 @@ export class GeoUtil {
     } else {
       // Need to expand height (latitude)
       const newLatRange = lngRange / targetRatio;
-      const latExpansion = (newLatRange - latRange) / 2;
       return {
         minLat: centerLat - newLatRange / 2,
         maxLat: centerLat + newLatRange / 2,
@@ -123,9 +121,10 @@ export class GeoUtil {
   }
 
   /**
-   * Calculate appropriate zoom level for bounds and image size
+   * Calculate appropriate zoom level for bounds
+   * Returns the maximum zoom level that cannot fully cover the bounds
    */
-  static calculateZoom(bounds: GeoBounds, imageWidth: number, imageHeight: number): number {
+  static calculateZoom(bounds: GeoBounds): number {
     const latRange = bounds.maxLat - bounds.minLat;
     const lngRange = bounds.maxLng - bounds.minLng;
     
@@ -135,9 +134,9 @@ export class GeoUtil {
     // Calculate zoom based on latitude range
     const latZoom = Math.floor(Math.log2(180 / latRange));
     
-    // Use the smaller zoom to ensure the entire area fits
-    const zoom = Math.min(lngZoom, latZoom, 18); // Max zoom 18
+    // Use the larger zoom (higher resolution) that cannot fully cover the area
+    const zoom = Math.max(lngZoom, latZoom);
     
-    return Math.max(zoom, 1); // Min zoom 1
+    return Math.min(Math.max(zoom, 1), 18); // Min zoom 1, Max zoom 18
   }
 }

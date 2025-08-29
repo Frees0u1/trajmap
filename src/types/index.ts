@@ -73,7 +73,7 @@ export interface RenderConfig {
   output: string;
   lineColor?: string;
   lineWidth?: number;
-  tileProvider?: string;
+  retina?: boolean;
 }
 
 // Processing result interfaces
