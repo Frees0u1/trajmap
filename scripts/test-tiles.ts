@@ -13,6 +13,7 @@ import * as path from 'path';
 import { PolylineUtil } from '../src/utils/polyline';
 import { BoundaryService } from '../src/boundary';
 import { TileService } from '../src/tiles';
+import { GeoUtil } from '../src/utils/geo';
 import { MercatorUtil } from '../src/utils/mercator';
 import { LatLng, GeoBounds, TrackRegion, TileCoord, BoundaryResult, ExpansionRegion } from '../src/types';
 
@@ -34,12 +35,12 @@ const defaultConfig: TestConfig = {
   polyline: '}t~FqypxRiEx@@sGmBAsCxMkGvMFxDfCnFtT`GbTpN~@iAzUqLpT_GnReNhq@{AdEoAhD_Ev@uDtBsz@hAeL~Vuh@j@uD]yNfA_G~_@ah@Wq@t@VdCyDyC|DwAmCoDiBMeJkCyFlIyCjEWo@eRx@kCgDiEtB}CKaFmOeBAkGo@gKyFg@cX{MlDiJiBm@qAgC{AIjIwQ|DuDc@`@dWgd@uSwLmEsFiAyKnDuMsB}GcKyN}PhO{O~J_WvJiLjCiAYk@gHvB{@eA}@V}DiAaHG{KrAkDnFqH}@sAb@oAgAcDmGqES_]bAwe@}F{t@{Ioe@cBaDiCmMQyHyLe^i@_H}BkE}H{_@a@qKuD}TmB{VgCkF@qHwCuFgY}cAI{Io@uKeS{o@{DqSsG_MxHcEmDmMCaEuDuTy@oh@}BoCsRgK`Pgb@|DaRp@PhCaFxXyz@dBoLmA{[pJgZG}MkBuDeFeDu\\{BemF_cBqN[oIlEcH`OaCnHVg@h@bAqQpi@gLjUoCjM_Ujr@c@A^kBkCBeAfEgLMsDyDaDzBq^lL{SdEyDjCsKzCuO`J_DxEuAbOgAnF}HfY|BpAzBdDxI|@f@YWiAhA[|@pCzCG_Axb@fC~JfDvF`InCrc@{@hGdArT~RDdAcFxFxKrKeS|RhHlIeE|EChBrIrEuDdHaCl[HzJ|@j@pBh[_@vHuCnKkKbUwPtVgRzULbAtMpFyNsD{JxRaYhMgPfSpFjG}TrScCo@gHvGqAWqB~AmLjQqIxHiAlGgDjHuPtPyFlQwPdDkGhI_ApEOtCn@~@fNJdJhDE|AiFxHkDzJQnR|TjUhJdSjG~DrTjBbSrG_@zCtA`@}BhFtD|CNpFgAbM|DnXY~NoQw@cLpDoHCmAu@eJjDcc@uDOhAtJpQtS`V~A~Da@rIeLrSaGeDwGa@mHiE{GaBoYx@_Io@uYkMmAt@dA|@kUtk@wJ~HbN`K_CjFfA|BZdHlKA`FqAlVpT_F`Fu@xELtBxGlEtBtEiCtNhFxRwDxMlo@vVGpAz@j@gDhPwPbXqA`FMtG~B`\\cIhYk@~FvB`LdCvFmBvJmCdCkCdHpBvSjQzx@hBlQ|FjWIzf@zEpYqCnw@yGnUpAxUtGt@zd@mArZlCv^hHz@rADlG|b@uDbWoLhT_PjBmEbGkCkCeG\\iApK_Dzh@{Fzf@sXxGYbMnBfReAhJwGfv@m\\lKgI~Af@dHsK|\\mUjZwBh^Cxe@{BpMsJ|J}BlJyEbLwIvNaQhn@cOsB~@}DuD{NkHsJoDmI}@gCiHEmCnFqNtBeO~AD',
   outputPath: './output/test-tiles.png',
   trackRegion: {
-    width: 4,
-    height: 4
+    width: 400,
+    height: 200
   },
-  expansion: {
-    rightPercent: 0.5,
-  },
+  // expansion: {
+  //   rightPercent: 0.5,
+  // },
 };
 
 /**
@@ -224,8 +225,8 @@ class TilesTester {
   private async stitchTilesAndDrawBounds(): Promise<void> {
     console.log('🎨 拼接瓦片并绘制辅助线...');
     
-    // 根据瓦片数量创建画布 - 每个瓦片256x256像素
-    const tileSize = 256;
+    // 根据瓦片数量创建画布 - 每个瓦片的标准尺寸
+    const tileSize = MercatorUtil.getTileSize(false);
     const gridCols = Math.max(...this.tiles.map(t => t.x)) - Math.min(...this.tiles.map(t => t.x)) + 1;
     const gridRows = Math.max(...this.tiles.map(t => t.y)) - Math.min(...this.tiles.map(t => t.y)) + 1;
     

@@ -5,6 +5,7 @@
 
 import { LatLng, GeoBounds, PixelPoint, PixelBounds, TrackRegion, ProjectionResult } from '../types';
 import { MercatorUtil } from '../utils/mercator';
+import { createCanvas, loadImage } from 'canvas';
 
 /**
  * Projection service
@@ -13,7 +14,7 @@ export class ProjectionService {
   /**
    * Project GPS trajectory onto map image
    */
-  static projectTrajectory(
+  static async projectTrajectory(
     gpsPoints: LatLng[],
     mapImage: Buffer,
     mapBounds: GeoBounds,
@@ -21,28 +22,58 @@ export class ProjectionService {
     zoom: number,
     lineColor: string = '#FF5500',
     lineWidth: number = 3
-  ): ProjectionResult {
+  ): Promise<ProjectionResult> {
     if (gpsPoints.length === 0) {
       throw new Error('No GPS points to project');
     }
 
     // Convert GPS points to pixel coordinates
     const pixelPoints = gpsPoints.map(point => 
-      MercatorUtil.latLngToPixel(point, mapBounds, trackRegion.width, trackRegion.height, zoom)
+      MercatorUtil.latLngToPixel(point, mapBounds, mapImage.width, trackRegion.height, zoom)
     );
 
     // Validate pixel points are within image bounds
     ProjectionService.validatePixelPoints(pixelPoints, trackRegion.width, trackRegion.height);
 
-    // In a real implementation, this would:
-    // 1. Create a canvas or image context from mapImage
-    // 2. Set line style (color, width, etc.)
-    // 3. Draw the trajectory path connecting all pixel points
-    // 4. Return the final image buffer
+    // Create canvas from map image
+    const image = await loadImage(mapImage);
+    const canvas = createCanvas(image.width, image.height);
+    const ctx = canvas.getContext('2d');
     
-    // For now, return the original image as placeholder
+    // Draw background image
+    ctx.drawImage(image, 0, 0);
+    
+    // Draw trajectory if we have at least 2 points
+    if (pixelPoints.length >= 2) {
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = lineWidth;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      
+      ctx.beginPath();
+      ctx.moveTo(pixelPoints[0].x, pixelPoints[0].y);
+      
+      for (let i = 1; i < pixelPoints.length; i++) {
+        ctx.lineTo(pixelPoints[i].x, pixelPoints[i].y);
+      }
+      
+      ctx.stroke();
+      
+      // Draw start point (green)
+      ctx.fillStyle = '#00CC00';
+      ctx.beginPath();
+      ctx.arc(pixelPoints[0].x, pixelPoints[0].y, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // Draw end point (red)
+      ctx.fillStyle = '#CC0000';
+      ctx.beginPath();
+      ctx.arc(pixelPoints[pixelPoints.length - 1].x, pixelPoints[pixelPoints.length - 1].y, 6, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+    
     return {
-      finalImage: mapImage
+      finalImage: canvas.toBuffer('image/png')
     };
   }
 

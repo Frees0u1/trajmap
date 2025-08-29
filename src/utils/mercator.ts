@@ -22,7 +22,7 @@ export class MercatorUtil {
   /**
    * Get tile size based on retina setting
    */
-  private static getTileSize(retina: boolean = false): number {
+  static getTileSize(retina: boolean = false): number {
     return retina ? 512 : 256;
   }
 

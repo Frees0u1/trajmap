@@ -61,7 +61,8 @@ export interface TileData {
 // Tile grid information
 export interface TileGrid {
   tiles: TileData[];
-  bounds: GeoBounds;
+  targetBounds: GeoBounds;  
+  tileBounds: GeoBounds;
   zoom: number;
 }
 

@@ -59,16 +59,14 @@ export class TrajMap {
       );
 
       // Step 5: Stitching and cropping - create base map image
-      const stitchingResult = StitchingService.stitchAndCrop(
+      const stitchingResult = await StitchingService.stitchAndCrop(
         fetchedTileGrid,
-        bounds,
-        processedConfig.trackRegion,
         zoom
       );
       const { image: mapImage } = stitchingResult;
 
       // Step 6: Trajectory projection - draw GPS path on map
-      const projectionResult = ProjectionService.projectTrajectory(
+      const projectionResult = await ProjectionService.projectTrajectory(
         gpsPoints,
         mapImage,
         bounds,

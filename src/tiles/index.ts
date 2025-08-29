@@ -41,9 +41,21 @@ export class TileService {
       }
     }
 
+    // Calculate the actual bounds of the tile grid
+    const topLeftTileBounds = MercatorUtil.tileToBounds(topLeft.x, topLeft.y, zoom);
+    const bottomRightTileBounds = MercatorUtil.tileToBounds(bottomRight.x, bottomRight.y, zoom);
+    
+    const tileBounds: GeoBounds = {
+      minLat: bottomRightTileBounds.minLat,
+      maxLat: topLeftTileBounds.maxLat,
+      minLng: topLeftTileBounds.minLng,
+      maxLng: bottomRightTileBounds.maxLng
+    };
+
     const tileGrid: TileGrid = {
       tiles,
-      bounds,
+      targetBounds: bounds,
+      tileBounds,
       zoom
     };
 
