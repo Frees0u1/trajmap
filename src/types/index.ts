@@ -75,6 +75,10 @@ export interface TrajmapConfig {
   lineColor?: string;
   lineWidth?: number;
   retina?: boolean;
+  marker?: {
+    start?: string; // 支持图形选项如 'circle', 'square'
+    end?: string;   // 支持图形选项如 'circle', 'square'
+  };
 }
 
 // Processing result interfaces

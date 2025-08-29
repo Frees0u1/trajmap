@@ -3,7 +3,7 @@
  * Handles GPS trajectory projection onto map images
  */
 
-import { LatLng, GeoBounds, PixelPoint, PixelBounds, TrackRegion, ProjectionResult } from '../types';
+import { LatLng, GeoBounds, PixelPoint, PixelBounds, TrackRegion, ProjectionResult, TrajmapConfig } from '../types';
 import { MercatorUtil } from '../utils/mercator';
 import { createCanvas, loadImage } from 'canvas';
 
@@ -21,8 +21,7 @@ export class ProjectionService {
     imageWidth: number,
     imageHeight: number,
     zoom: number,
-    lineColor: string = '#FF5500',
-    lineWidth: number = 3,
+    config: TrajmapConfig
   ): Promise<ProjectionResult> {
     if (gpsPoints.length === 0) {
       throw new Error('No GPS points to project');
@@ -46,8 +45,8 @@ export class ProjectionService {
     
     // Draw trajectory if we have at least 2 points
     if (pixelPoints.length >= 2) {
-      ctx.strokeStyle = lineColor;
-      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = config.lineColor || '#FF5500';
+      ctx.lineWidth = config.lineWidth || 3;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       
@@ -60,17 +59,14 @@ export class ProjectionService {
       
       ctx.stroke();
       
-      // Draw start point (green)
-      ctx.fillStyle = '#00CC00';
-      ctx.beginPath();
-      ctx.arc(pixelPoints[0].x, pixelPoints[0].y, 6, 0, 2 * Math.PI);
-      ctx.fill();
+      // Draw markers if specified
+      if (config.marker?.start) {
+        ProjectionService.drawMarker(ctx, pixelPoints[0], config.marker.start, 'start');
+      }
       
-      // Draw end point (red)
-      ctx.fillStyle = '#CC0000';
-      ctx.beginPath();
-      ctx.arc(pixelPoints[pixelPoints.length - 1].x, pixelPoints[pixelPoints.length - 1].y, 6, 0, 2 * Math.PI);
-      ctx.fill();
+      if (config.marker?.end) {
+        ProjectionService.drawMarker(ctx, pixelPoints[pixelPoints.length - 1], config.marker.end, 'end');
+      }
     }
     
     // Calculate pixel bounds for the trajectory
@@ -188,5 +184,44 @@ export class ProjectionService {
 
     // Stroke the path
     context.stroke();
+  }
+
+  /**
+   * Draw marker at specified position
+   */
+  static drawMarker(
+    ctx: any,
+    point: PixelPoint,
+    markerType: string,
+    position: 'start' | 'end'
+  ): void {
+    const size = 12;
+    
+    // Draw geometric shape
+    ctx.fillStyle = position === 'start' ? '#00CC00' : '#CC0000';
+    
+    switch (markerType.toLowerCase()) {
+      case 'circle':
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, size / 2, 0, 2 * Math.PI);
+        ctx.fill();
+        break;
+      case 'square':
+        ctx.fillRect(point.x - size / 2, point.y - size / 2, size, size);
+        break;
+      case 'triangle':
+        ctx.beginPath();
+        ctx.moveTo(point.x, point.y - size / 2);
+        ctx.lineTo(point.x - size / 2, point.y + size / 2);
+        ctx.lineTo(point.x + size / 2, point.y + size / 2);
+        ctx.closePath();
+        ctx.fill();
+        break;
+      default:
+        // Default to circle
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, size / 2, 0, 2 * Math.PI);
+        ctx.fill();
+    }
   }
 }

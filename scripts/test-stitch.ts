@@ -38,6 +38,10 @@ interface StitchTestConfig {
   expansion?: ExpansionRegion;
   lineColor?: string;
   lineWidth?: number;
+  marker?: {
+    start?: string;
+    end?: string;
+  };
 }
 
 /**
@@ -232,8 +236,7 @@ class StitchTester {
         width,
         height,
         this.zoom,
-        this.config.lineColor,
-        this.config.lineWidth
+        this.config as any
       );
       
       console.log('   轨迹投影完成');

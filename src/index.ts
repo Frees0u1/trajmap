@@ -94,8 +94,7 @@ export class TrajMap {
         imageWidth,
         imageHeight,
         tileResult.zoom,
-        config.lineColor || '#FF5500',
-        config.lineWidth || 3
+        config
       );
 
       // Step 7: Format final result using RenderService

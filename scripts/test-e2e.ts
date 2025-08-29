@@ -122,6 +122,10 @@ async function main() {
     output: outputPath,
     lineColor: '#FF5500',
     lineWidth: 4,
+    marker: {
+      start: 'circle',
+      end: 'circle'
+    },
     retina: true
   };
   
