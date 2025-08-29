@@ -59,8 +59,12 @@ export class TileService {
     const { x, y, z } = coord;
     const retinaParam = retina ? '@2x' : '';
     
-    // Use CartoDB Voyager style with retina support
-    return `https://c.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}${retinaParam}.png`;
+    // Randomly select one of the four subdomains (a, b, c, d)
+    const subdomains = ['a', 'b', 'c', 'd'];
+    const subdomain = subdomains[Math.floor(Math.random() * subdomains.length)];
+    
+    // Use CartoDB Voyager style with retina support and random subdomain
+    return `https://${subdomain}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}${retinaParam}.png`;
   }
 
   /**
