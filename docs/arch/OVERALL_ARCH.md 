@@ -1,0 +1,66 @@
+# 整体技术设计
+
+# 核心步骤
+0. 预处理
+1. 边界确定
+2. 瓦片获取
+3. 拼接裁剪
+4. 轨迹投影
+
+用户输入
+1. GPS polyline
+2. 输出配置：
+    * 目标原始轨迹框尺寸， trackRegion, 轨迹需要在trackRegion内居中展示
+    * 地图扩展框方向与百分比， expansionRegion, 只展示地图背景
+
+## 预处理
+Input: polyline 和其他配置参数
+Output: 解码后GPS序列、具体配置
+Steps: 
+1. 解码后GPS序列
+2. 给出默认配置
+
+## 边界确定
+Input: GPS序列，配置
+Output: 根据用户输入的GPS和输出需要原始框尺寸，和扩展框配置，动态计算需要的**地理边界**（minLat, maxLat, minLng, maxLng）
+Steps:
+1. 根据轨迹计算轨迹地理边界 bound0 （minLat, maxLat, minLng, maxLng）
+2. 根据轨迹bound0加上10%, 计算规则（(长+宽)/2）*10%， 得到bound1(minLat, maxLat, minLng, maxLng)
+3. 根据trackRegion width/height的宽高比，分情况计算
+    * 判断是否高度不变，对称扩展宽度是否能满足trackRegion的宽高比，则按这个方案
+    * 否则，保持宽度不变，对称扩展高度来满足trackRegion宽高比
+   最终得到新的边界bound2(minLat, maxLat, minLon, maxLon) 
+4. 加上扩展框expansionRegion
+    * up/down, x% => 计算高度上需要增加的距离 = bound2高度距离 * x%
+    * left/right,x% => 计算宽度上需要增加的距离 = bound2宽度距离 * x%
+    * 根据距离换算新新的边界bound3(minLat, maxLat, minLon, maxLon)
+
+
+## 瓦片计算与获取
+Input: 任意边界(minLat,maxLat, minLon, maxLon)
+Output: 可以覆盖这个区域的瓦片集合
+Steps:
+1. 根据边界计算Zoom, zoom的标准是选择尺寸无法覆盖全部边界的zoom级别。
+2. 并行获取所有tileGrad
+
+## 拼接裁剪
+Input: 
+- 目标边界(minLat,maxLat, minLon, maxLon)
+- tileGrad(也可以通过瓦片数据得到对应的minLat, maxLat, minLon, maxLon)
+Output: 精确在目标边界(minLat,maxLat, minLon, maxLon)的图片
+* 将tileGrad全部平铺合并得到一张大图片
+* 根据Web Mercator和tileGrad的边界可以得到lat/lng到像素的映射（这里需要一个utils）
+* 将目标区域计算出像素位置(minLat,maxLat, minLon, maxLon) => (minH, maxH, minW, maxW)
+* 使用sharp将 (minH, maxH, minW, maxW)进行裁剪得到图片
+
+## 轨迹投影
+Input:
+- 轨迹点
+- 图片及其地理边界(minLat,maxLat, minLon, maxLon)
+Output: 画上轨迹的png图片
+Steps:
+- 每一个gps轨迹点，使用Web Mercator计算所有的projectionPoints
+- 在图上绘制这个projectionPoints
+
+
+

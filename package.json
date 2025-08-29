@@ -1,12 +1,9 @@
 {
   "name": "trajmap",
   "version": "0.1.0",
-  "description": "将Polyline渲染为地图瓦片背景的轨迹图片",
+  "description": "GPS trajectory rendering library with map tile backgrounds",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": {
-    "trajmap": "dist/cli.js"
-  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -15,11 +12,13 @@
     "prepublishOnly": "npm run build"
   },
   "keywords": [
-    "polyline",
-    "map",
+    "gps",
     "trajectory",
-    "render",
-    "png"
+    "map",
+    "polyline",
+    "tiles",
+    "rendering",
+    "geospatial"
   ],
   "author": "",
   "license": "MIT",

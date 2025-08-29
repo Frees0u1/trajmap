@@ -1,72 +1,117 @@
-import * as polyline from '@mapbox/polyline';
+/**
+ * Polyline encoding/decoding utilities
+ */
+
 import { LatLng } from '../types';
 
 /**
- * Polyline utility class
- * Used for processing and converting polyline format trajectory data
+ * Polyline utilities for encoding and decoding GPS trajectories
  */
 export class PolylineUtil {
   /**
-   * Decode polyline string to coordinate points array
-   * @param encodedPolyline Encoded polyline string
-   * @returns Array of coordinate points
+   * Decode polyline string to GPS points
    */
-  static decode(encodedPolyline: string): LatLng[] {
-    try {
-      // Use @mapbox/polyline library to decode
-      const points = polyline.decode(encodedPolyline);
-      
-      // Convert to LatLng format
-      return points.map(point => ({
-        lat: point[0],
-        lng: point[1]
-      }));
-    } catch (error) {
-      console.error('Failed to decode polyline:', error);
-      throw new Error('Invalid polyline format');
+  static decode(polyline: string): LatLng[] {
+    const points: LatLng[] = [];
+    let index = 0;
+    let lat = 0;
+    let lng = 0;
+
+    while (index < polyline.length) {
+      let b: number;
+      let shift = 0;
+      let result = 0;
+
+      // Decode latitude
+      do {
+        b = polyline.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+
+      const deltaLat = ((result & 1) !== 0 ? ~(result >> 1) : (result >> 1));
+      lat += deltaLat;
+
+      shift = 0;
+      result = 0;
+
+      // Decode longitude
+      do {
+        b = polyline.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+
+      const deltaLng = ((result & 1) !== 0 ? ~(result >> 1) : (result >> 1));
+      lng += deltaLng;
+
+      points.push({
+        lat: lat * 1e-5,
+        lng: lng * 1e-5
+      });
     }
+
+    return points;
   }
 
   /**
-   * Encode coordinate points array to polyline string
-   * @param points Array of coordinate points
-   * @returns Encoded polyline string
+   * Encode GPS points to polyline string
    */
   static encode(points: LatLng[]): string {
-    try {
-      // Convert to format required by polyline library
-      const rawPoints = points.map(point => [point.lat, point.lng] as [number, number]);
-      
-      // Use @mapbox/polyline library to encode
-      return polyline.encode(rawPoints);
-    } catch (error) {
-      console.error('Failed to encode polyline:', error);
-      throw new Error('Invalid points format');
+    if (points.length === 0) {
+      return '';
     }
+
+    let polyline = '';
+    let prevLat = 0;
+    let prevLng = 0;
+
+    for (const point of points) {
+      const lat = Math.round(point.lat * 1e5);
+      const lng = Math.round(point.lng * 1e5);
+
+      const deltaLat = lat - prevLat;
+      const deltaLng = lng - prevLng;
+
+      polyline += PolylineUtil.encodeValue(deltaLat);
+      polyline += PolylineUtil.encodeValue(deltaLng);
+
+      prevLat = lat;
+      prevLng = lng;
+    }
+
+    return polyline;
   }
 
   /**
-   * Calculate trajectory boundaries
-   * @param points Array of coordinate points
-   * @returns Boundary object {north, south, east, west}
+   * Encode a single value for polyline
    */
-  static getBounds(points: LatLng[]): { north: number; south: number; east: number; west: number } {
-    if (!points || points.length === 0) {
-      throw new Error('Empty points array');
+  private static encodeValue(value: number): string {
+    value = value < 0 ? ~(value << 1) : (value << 1);
+    let encoded = '';
+
+    while (value >= 0x20) {
+      encoded += String.fromCharCode((0x20 | (value & 0x1f)) + 63);
+      value >>= 5;
     }
 
-    let north = -90;
-    let south = 90;
-    let east = -180;
-    let west = 180;
+    encoded += String.fromCharCode(value + 63);
+    return encoded;
+  }
 
-    for (const point of points) {
-      north = Math.max(north, point.lat);
-      south = Math.min(south, point.lat);
-      east = Math.max(east, point.lng);
-      west = Math.min(west, point.lng);
+  /**
+   * Validate polyline string format
+   */
+  static validate(polyline: string): boolean {
+    if (!polyline || typeof polyline !== 'string') {
+      return false;
     }
 
-    return { north, south, east, west };
+    try {
+      const points = PolylineUtil.decode(polyline);
+      return points.length > 0;
+    } catch (error) {
+      return false;
+    }
   }
 }
