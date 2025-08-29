@@ -3,6 +3,7 @@
  * Handles tile coordinate calculation and tile data retrieval
  */
 
+import axios from 'axios';
 import { GeoBounds, TileCoord, TileData, TileGrid, TileResult } from '../types';
 import { MercatorUtil } from '../utils/mercator';
 
@@ -55,7 +56,7 @@ export class TileService {
   /**
    * Get tile URL from CartoCD provider with retina support
    */
-  static getTileUrl(coord: TileCoord, retina: boolean = true): string {
+  static getTileUrl(coord: TileCoord, retina: boolean = false): string {
     const { x, y, z } = coord;
     const retinaParam = retina ? '@2x' : '';
     
@@ -70,17 +71,17 @@ export class TileService {
   /**
    * Fetch tile data from URL
    */
-  static async fetchTile(coord: TileCoord, retina: boolean = true): Promise<TileData> {
+  static async fetchTile(coord: TileCoord, retina: boolean = false): Promise<TileData> {
     const url = TileService.getTileUrl(coord, retina);
     
     try {
-      // Note: In a real implementation, you would use fetch or axios here
-      // For now, we'll return a placeholder
+      const response = await axios.get(url, { responseType: 'arraybuffer' });
+      const buffer = Buffer.from(response.data);
       const tileBounds = MercatorUtil.tileToBounds(coord.x, coord.y, coord.z);
       
       return {
         coord,
-        buffer: Buffer.alloc(0), // Placeholder - would contain actual tile image data
+        buffer,
         bounds: tileBounds
       };
     } catch (error) {
@@ -91,7 +92,7 @@ export class TileService {
   /**
    * Fetch all tiles in a grid
    */
-  static async fetchTileGrid(tileGrid: TileGrid, retina: boolean = true): Promise<TileGrid> {
+  static async fetchTileGrid(tileGrid: TileGrid, retina: boolean = false): Promise<TileGrid> {
     const fetchPromises = tileGrid.tiles.map(tile => 
       TileService.fetchTile(tile.coord, retina)
     );
@@ -106,6 +107,41 @@ export class TileService {
     } catch (error) {
       throw new Error(`Failed to fetch tile grid: ${error}`);
     }
+  }
+
+  /**
+   * Calculate optimal zoom level for given bounds using Web Mercator projection
+   * Based on standard tile-based mapping algorithms
+   */
+  static calculateOptimalZoom(bounds: GeoBounds, viewportWidth: number = 1024, viewportHeight: number = 768): number {
+    // Use Web Mercator formula to calculate zoom level
+    // Based on the longitude span and viewport width
+    const lngSpan = bounds.maxLng - bounds.minLng;
+    
+    // Calculate zoom level based on longitude span
+    // At zoom 0, the world is 360 degrees wide and 256 pixels wide
+    // At zoom n, the world is 256 * 2^n pixels wide
+    const zoomForLng = Math.log2(viewportWidth * 360 / (lngSpan * 256));
+    
+    // For latitude, we need to account for Mercator projection distortion
+    // Convert latitude bounds to Web Mercator Y coordinates
+    const latRad1 = (bounds.minLat * Math.PI) / 180;
+    const latRad2 = (bounds.maxLat * Math.PI) / 180;
+    
+    // Web Mercator Y calculation
+    const mercY1 = Math.log(Math.tan(Math.PI / 4 + latRad1 / 2));
+    const mercY2 = Math.log(Math.tan(Math.PI / 4 + latRad2 / 2));
+    const mercYSpan = Math.abs(mercY2 - mercY1);
+    
+    // Calculate zoom level for latitude
+    // The full Mercator Y range is 2π, and at zoom 0 it's 256 pixels
+    const zoomForLat = Math.log2(viewportHeight * 2 * Math.PI / (mercYSpan * 256));
+    
+    // Use the smaller zoom level to ensure the entire bounds fit
+    const zoom = Math.floor(Math.min(zoomForLng, zoomForLat));
+    
+    // Clamp zoom level to valid range
+    return Math.min(Math.max(zoom, 1), 18);
   }
 
   /**

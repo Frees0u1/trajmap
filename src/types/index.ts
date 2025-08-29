@@ -38,10 +38,10 @@ export interface TrackRegion {
 
 // Expansion region configuration
 export interface ExpansionRegion {
-  up?: number;    // percentage
-  down?: number;  // percentage
-  left?: number;  // percentage
-  right?: number; // percentage
+  upPercent?: number;    // percentage (0-1)
+  downPercent?: number;  // percentage (0-1)
+  leftPercent?: number;  // percentage (0-1)
+  rightPercent?: number; // percentage (0-1)
 }
 
 // Tile coordinate
@@ -83,8 +83,11 @@ export interface PreprocessingResult {
 }
 
 export interface BoundaryResult {
-  bounds: GeoBounds;
-  zoom: number;
+  bounds: GeoBounds;  // 最终边界框
+  bound0: GeoBounds;  // 初始轨迹框
+  bound1: GeoBounds;  // 10% buffer框
+  bound2: GeoBounds;  // 适配trackRegion的扩展框
+  bound3: GeoBounds;  // 适配expansion的扩展框
 }
 
 export interface TileResult {

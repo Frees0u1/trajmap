@@ -18,6 +18,7 @@ export class ProjectionService {
     mapImage: Buffer,
     mapBounds: GeoBounds,
     trackRegion: TrackRegion,
+    zoom: number,
     lineColor: string = '#FF5500',
     lineWidth: number = 3
   ): ProjectionResult {
@@ -27,7 +28,7 @@ export class ProjectionService {
 
     // Convert GPS points to pixel coordinates
     const pixelPoints = gpsPoints.map(point => 
-      MercatorUtil.latLngToPixel(point, mapBounds, trackRegion.width, trackRegion.height)
+      MercatorUtil.latLngToPixel(point, mapBounds, trackRegion.width, trackRegion.height, zoom)
     );
 
     // Validate pixel points are within image bounds
@@ -52,10 +53,11 @@ export class ProjectionService {
     gpsPoints: LatLng[],
     imageBounds: GeoBounds,
     imageWidth: number,
-    imageHeight: number
+    imageHeight: number,
+    zoom: number
   ): PixelPoint[] {
     return gpsPoints.map(point => 
-      MercatorUtil.latLngToPixel(point, imageBounds, imageWidth, imageHeight)
+      MercatorUtil.latLngToPixel(point, imageBounds, imageWidth, imageHeight, zoom)
     );
   }
 

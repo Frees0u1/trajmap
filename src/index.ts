@@ -45,8 +45,9 @@ export class TrajMap {
         processedConfig.trackRegion,
         processedConfig.expansionRegion
       );
-      const { bounds, zoom } = boundaryResult;
+      const { bounds} = boundaryResult;
 
+      const zoom = TileService.calculateOptimalZoom(bounds);
       // Step 3: Tile calculation - determine required tiles
       const tileResult = TileService.calculateTiles(bounds, zoom);
       const { tileGrid } = tileResult;
@@ -61,7 +62,8 @@ export class TrajMap {
       const stitchingResult = StitchingService.stitchAndCrop(
         fetchedTileGrid,
         bounds,
-        processedConfig.trackRegion
+        processedConfig.trackRegion,
+        zoom
       );
       const { image: mapImage } = stitchingResult;
 
@@ -71,6 +73,7 @@ export class TrajMap {
         mapImage,
         bounds,
         processedConfig.trackRegion,
+        zoom,
         processedConfig.lineColor,
         processedConfig.lineWidth
       );

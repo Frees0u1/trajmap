@@ -3,55 +3,71 @@
  */
 
 import { LatLng, PixelPoint, GeoBounds, PixelBounds } from '../types';
+const { SphericalMercator } = require('@mapbox/sphericalmercator');
 
 /**
  * Web Mercator projection utilities
  */
 export class MercatorUtil {
-  private static readonly EARTH_RADIUS = 6378137; // Earth radius in meters
-  private static readonly ORIGIN_SHIFT = 2 * Math.PI * MercatorUtil.EARTH_RADIUS / 2;
+  private static readonly mercator = new SphericalMercator({ size: 256 });
+  private static readonly mercatorRetina = new SphericalMercator({ size: 512 });
+
+  /**
+   * Get the appropriate SphericalMercator instance based on retina setting
+   */
+  private static getMercator(retina: boolean = false): any {
+    return retina ? MercatorUtil.mercatorRetina : MercatorUtil.mercator;
+  }
+
+  /**
+   * Get tile size based on retina setting
+   */
+  private static getTileSize(retina: boolean = false): number {
+    return retina ? 512 : 256;
+  }
 
   /**
    * Convert latitude/longitude to Web Mercator meters
    */
-  static latLngToMeters(latLng: LatLng): { x: number; y: number } {
-    const x = latLng.lng * MercatorUtil.ORIGIN_SHIFT / 180;
-    let y = Math.log(Math.tan((90 + latLng.lat) * Math.PI / 360)) / (Math.PI / 180);
-    y = y * MercatorUtil.ORIGIN_SHIFT / 180;
+  static latLngToMeters(latLng: LatLng, retina: boolean = false): { x: number; y: number } {
+    const [x, y] = MercatorUtil.getMercator(retina).forward([latLng.lng, latLng.lat]);
     return { x, y };
   }
 
   /**
    * Convert Web Mercator meters to latitude/longitude
    */
-  static metersToLatLng(x: number, y: number): LatLng {
-    const lng = (x / MercatorUtil.ORIGIN_SHIFT) * 180;
-    let lat = (y / MercatorUtil.ORIGIN_SHIFT) * 180;
-    lat = 180 / Math.PI * (2 * Math.atan(Math.exp(lat * Math.PI / 180)) - Math.PI / 2);
+  static metersToLatLng(x: number, y: number, retina: boolean = false): LatLng {
+    const [lng, lat] = MercatorUtil.getMercator(retina).inverse([x, y]);
     return { lat, lng };
   }
 
   /**
    * Convert latitude/longitude to tile coordinates
    */
-  static latLngToTile(latLng: LatLng, zoom: number): { x: number; y: number } {
-    const n = Math.pow(2, zoom);
-    const x = Math.floor((latLng.lng + 180) / 360 * n);
-    const y = Math.floor((1 - Math.asinh(Math.tan(latLng.lat * Math.PI / 180)) / Math.PI) / 2 * n);
+  static latLngToTile(latLng: LatLng, zoom: number, retina: boolean = false): { x: number; y: number } {
+    // Use px method to convert lat/lng to pixel coordinates at given zoom level
+    const [px, py] = MercatorUtil.getMercator(retina).px([latLng.lng, latLng.lat], zoom);
+    
+    // Convert pixel coordinates to tile coordinates
+    const tileSize = MercatorUtil.getTileSize(retina);
+    const x = Math.floor(px / tileSize);
+    const y = Math.floor(py / tileSize);
+    
     return { x, y };
   }
 
   /**
    * Convert tile coordinates to latitude/longitude bounds
    */
-  static tileToBounds(x: number, y: number, zoom: number): GeoBounds {
-    const n = Math.pow(2, zoom);
-    const minLng = x / n * 360 - 180;
-    const maxLng = (x + 1) / n * 360 - 180;
-    const minLat = Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 1) / n))) * 180 / Math.PI;
-    const maxLat = Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))) * 180 / Math.PI;
-    
-    return { minLat, maxLat, minLng, maxLng };
+  static tileToBounds(x: number, y: number, zoom: number, retina: boolean = false): GeoBounds {
+    const bbox = MercatorUtil.getMercator(retina).bbox(x, y, zoom); // [west, south, east, north]
+    return {
+      minLng: bbox[0],
+      minLat: bbox[1],
+      maxLng: bbox[2],
+      maxLat: bbox[3]
+    };
   }
 
   /**
@@ -61,17 +77,32 @@ export class MercatorUtil {
     targetBounds: GeoBounds,
     imageBounds: GeoBounds,
     imageWidth: number,
-    imageHeight: number
+    imageHeight: number,
+    zoom: number,
+    retina: boolean = false
   ): PixelBounds {
-    const lngRange = imageBounds.maxLng - imageBounds.minLng;
-    const latRange = imageBounds.maxLat - imageBounds.minLat;
+    const mercator = MercatorUtil.getMercator(retina);
     
-    const minX = Math.floor((targetBounds.minLng - imageBounds.minLng) / lngRange * imageWidth);
-    const maxX = Math.ceil((targetBounds.maxLng - imageBounds.minLng) / lngRange * imageWidth);
-    const minY = Math.floor((imageBounds.maxLat - targetBounds.maxLat) / latRange * imageHeight);
-    const maxY = Math.ceil((imageBounds.maxLat - targetBounds.minLat) / latRange * imageHeight);
+    // Convert target bounds to pixel coordinates
+    const [minX, maxY] = mercator.px([targetBounds.minLng, targetBounds.minLat], zoom);
+    const [maxX, minY] = mercator.px([targetBounds.maxLng, targetBounds.maxLat], zoom);
     
-    return { minX, maxX, minY, maxY };
+    // Convert image bounds to pixel coordinates for offset calculation
+    const [imageMinX, imageMaxY] = mercator.px([imageBounds.minLng, imageBounds.minLat], zoom);
+    const [imageMaxX, imageMinY] = mercator.px([imageBounds.maxLng, imageBounds.maxLat], zoom);
+    
+    // Calculate relative pixel positions within the image using proper scaling
+    const relativeMinX = Math.floor((minX - imageMinX) * imageWidth / (imageMaxX - imageMinX));
+    const relativeMaxX = Math.ceil((maxX - imageMinX) * imageWidth / (imageMaxX - imageMinX));
+    const relativeMinY = Math.floor((minY - imageMinY) * imageHeight / (imageMaxY - imageMinY));
+    const relativeMaxY = Math.ceil((maxY - imageMinY) * imageHeight / (imageMaxY - imageMinY));
+    
+    return { 
+      minX: relativeMinX, 
+      maxX: relativeMaxX, 
+      minY: relativeMinY, 
+      maxY: relativeMaxY 
+    };
   }
 
   /**
@@ -81,25 +112,35 @@ export class MercatorUtil {
    * @param imageBounds Geographic boundary range covered by the image
    * @param imageWidth Image width in pixels
    * @param imageHeight Image height in pixels
+   * @param zoom Zoom level to use for conversion
+   * @param retina Whether to use retina/high-DPI tiles (512x512 instead of 256x256)
    * @returns Corresponding pixel coordinate point
    * 
    * Calculation principle:
-   * 1. Calculate relative position of target point within image bounds (ratio between 0-1)
-   * 2. Convert relative position to specific pixel coordinates
-   * 3. Note Y-axis direction: higher latitude means more north in geographic coordinates,
-   *    but higher Y value means lower position in pixel coordinates
+   * 1. Use provided zoom level
+   * 2. Convert coordinates to pixel coordinates using spherical mercator projection
+   * 3. Calculate relative position within the image bounds
    */
   static latLngToPixel(
     latLng: LatLng,
     imageBounds: GeoBounds,
     imageWidth: number,
-    imageHeight: number
+    imageHeight: number,
+    zoom: number,
+    retina: boolean = false
   ): PixelPoint {
-    const lngRange = imageBounds.maxLng - imageBounds.minLng;
-    const latRange = imageBounds.maxLat - imageBounds.minLat;
+    const mercator = MercatorUtil.getMercator(retina);
     
-    const x = (latLng.lng - imageBounds.minLng) / lngRange * imageWidth;
-    const y = (imageBounds.maxLat - latLng.lat) / latRange * imageHeight;
+    // Convert target point to pixel coordinates
+    const [targetX, targetY] = mercator.px([latLng.lng, latLng.lat], zoom);
+    
+    // Convert image bounds to pixel coordinates for offset calculation
+    const [imageMinX, imageMaxY] = mercator.px([imageBounds.minLng, imageBounds.minLat], zoom);
+    const [imageMaxX, imageMinY] = mercator.px([imageBounds.maxLng, imageBounds.maxLat], zoom);
+    
+    // Calculate relative pixel position within the image
+    const x = (targetX - imageMinX) * imageWidth / (imageMaxX - imageMinX);
+    const y = (targetY - imageMinY) * imageHeight / (imageMaxY - imageMinY);
     
     return { x, y };
   }

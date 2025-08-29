@@ -5,6 +5,7 @@
 
 import { LatLng, RenderConfig, PreprocessingResult } from '../types';
 import { PolylineUtil } from '../utils/polyline';
+import { ValidationUtil } from '../utils/validation';
 
 /**
  * Preprocessing service
@@ -26,13 +27,17 @@ export class PreprocessingService {
       throw new Error('No GPS points found in polyline');
     }
 
-    // Apply default configuration
+    // Validate expansion region if provided
+    if (config.expansionRegion) {
+      ValidationUtil.validateExpansionRegion(config.expansionRegion);
+    }
+
+    // Apply default configuration (no default expansion region)
     const processedConfig: RenderConfig = {
       ...config,
       lineColor: config.lineColor || '#FF0000',
       lineWidth: config.lineWidth || 3,
-      retina: config.retina !== undefined ? config.retina : false,
-      expansionRegion: config.expansionRegion || { up: 0.1, down: 0.1, left: 0.1, right: 0.1 }
+      retina: config.retina !== undefined ? config.retina : false
     };
 
     return {

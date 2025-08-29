@@ -22,23 +22,28 @@ export class BoundaryService {
       throw new Error('Cannot calculate bounds from empty GPS points');
     }
 
-    // Calculate initial bounds from GPS points
-    let bounds = GeoUtil.calculateBounds(gpsPoints);
+    // Calculate initial bounds from GPS points (bound0)
+    const bound0 = GeoUtil.calculateBounds(gpsPoints);
 
-    // Apply expansion region if provided
+    // Add default 10% buffer according to architecture requirements (bound1)
+    // Formula: (length + width) / 2 * 10%
+    const bound1 = GeoUtil.expandBufferBounds(bound0, 10);
+
+    // Adjust bounds to match track region aspect ratio (bound2)
+    const bound2 = GeoUtil.adjustBoundsToAspectRatio(bound1, trackRegion);
+
+    // Apply expansion region if provided (bound3)
+    let bound3 = bound2;
     if (expansionRegion) {
-      bounds = GeoUtil.applyExpansionRegion(bounds, expansionRegion);
+      bound3 = GeoUtil.applyExpansionRegion(bound2, expansionRegion);
     }
 
-    // Adjust bounds to match track region aspect ratio
-    bounds = GeoUtil.adjustBoundsToAspectRatio(bounds, trackRegion);
-
-    // Calculate appropriate zoom level
-    const zoom = GeoUtil.calculateZoom(bounds);
-
     return {
-      bounds,
-      zoom
+      bounds: bound3,  // 最终边界框
+      bound0,  // 初始轨迹框
+      bound1,  // 10% buffer框
+      bound2,  // 适配trackRegion的扩展框
+      bound3   // 适配expansion的扩展框
     };
   }
 

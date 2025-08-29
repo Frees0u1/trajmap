@@ -3,6 +3,8 @@
  */
 
 import { LatLng, GeoBounds, TrackRegion, ExpansionRegion } from '../types';
+import { MercatorUtil } from './mercator';
+import { ValidationUtil } from './validation';
 
 /**
  * Geographic utilities
@@ -53,7 +55,7 @@ export class GeoUtil {
   /**
    * Expand bounds by percentage
    */
-  static expandBounds(bounds: GeoBounds, percentage: number): GeoBounds {
+  static expandBufferBounds(bounds: GeoBounds, percentage: number): GeoBounds {
     const latRange = bounds.maxLat - bounds.minLat;
     const lngRange = bounds.maxLng - bounds.minLng;
     const avgRange = (latRange + lngRange) / 2;
@@ -69,31 +71,46 @@ export class GeoUtil {
 
   /**
    * Adjust bounds to match aspect ratio
+   * Uses Web Mercator projection for accurate distance calculations
    */
   static adjustBoundsToAspectRatio(bounds: GeoBounds, trackRegion: TrackRegion): GeoBounds {
     const targetRatio = trackRegion.width / trackRegion.height;
-    const latRange = bounds.maxLat - bounds.minLat;
-    const lngRange = bounds.maxLng - bounds.minLng;
-    const currentRatio = lngRange / latRange;
+    
+    // Convert bounds to Mercator coordinates for accurate distance calculation
+    const minPoint = MercatorUtil.latLngToMeters({ lat: bounds.minLat, lng: bounds.minLng });
+    const maxPoint = MercatorUtil.latLngToMeters({ lat: bounds.maxLat, lng: bounds.maxLng });
+    
+    const widthMeters = maxPoint.x - minPoint.x;
+    const heightMeters = maxPoint.y - minPoint.y;
+    const currentRatio = widthMeters / heightMeters;
 
     const centerLat = (bounds.minLat + bounds.maxLat) / 2;
     const centerLng = (bounds.minLng + bounds.maxLng) / 2;
+    const centerPoint = MercatorUtil.latLngToMeters({ lat: centerLat, lng: centerLng });
 
     if (currentRatio < targetRatio) {
       // Need to expand width (longitude)
-      const newLngRange = latRange * targetRatio;
+      const newWidthMeters = heightMeters * targetRatio;
+      
+      const newMinPoint = MercatorUtil.metersToLatLng(centerPoint.x - newWidthMeters / 2, minPoint.y);
+      const newMaxPoint = MercatorUtil.metersToLatLng(centerPoint.x + newWidthMeters / 2, maxPoint.y);
+      
       return {
         minLat: bounds.minLat,
         maxLat: bounds.maxLat,
-        minLng: centerLng - newLngRange / 2,
-        maxLng: centerLng + newLngRange / 2
+        minLng: newMinPoint.lng,
+        maxLng: newMaxPoint.lng
       };
     } else {
       // Need to expand height (latitude)
-      const newLatRange = lngRange / targetRatio;
+      const newHeightMeters = widthMeters / targetRatio;
+      
+      const newMinPoint = MercatorUtil.metersToLatLng(minPoint.x, centerPoint.y - newHeightMeters / 2);
+      const newMaxPoint = MercatorUtil.metersToLatLng(maxPoint.x, centerPoint.y + newHeightMeters / 2);
+      
       return {
-        minLat: centerLat - newLatRange / 2,
-        maxLat: centerLat + newLatRange / 2,
+        minLat: newMinPoint.lat,
+        maxLat: newMaxPoint.lat,
         minLng: bounds.minLng,
         maxLng: bounds.maxLng
       };
@@ -103,14 +120,22 @@ export class GeoUtil {
   /**
    * Apply expansion region to bounds
    */
-  static applyExpansionRegion(bounds: GeoBounds, expansion: ExpansionRegion): GeoBounds {
+  static applyExpansionRegion(bounds: GeoBounds, expansion?: ExpansionRegion): GeoBounds {
+    // If no expansion is provided, return original bounds
+    if (!expansion) {
+      return bounds;
+    }
+
+    // Validate expansion region
+    ValidationUtil.validateExpansionRegion(expansion);
+
     const latRange = bounds.maxLat - bounds.minLat;
     const lngRange = bounds.maxLng - bounds.minLng;
 
-    const upExpansion = expansion.up ? latRange * expansion.up / 100 : 0;
-    const downExpansion = expansion.down ? latRange * expansion.down / 100 : 0;
-    const leftExpansion = expansion.left ? lngRange * expansion.left / 100 : 0;
-    const rightExpansion = expansion.right ? lngRange * expansion.right / 100 : 0;
+    const upExpansion = expansion.upPercent ? latRange * expansion.upPercent : 0;
+    const downExpansion = expansion.downPercent ? latRange * expansion.downPercent : 0;
+    const leftExpansion = expansion.leftPercent ? lngRange * expansion.leftPercent : 0;
+    const rightExpansion = expansion.rightPercent ? lngRange * expansion.rightPercent : 0;
 
     return {
       minLat: bounds.minLat - downExpansion,
@@ -124,19 +149,5 @@ export class GeoUtil {
    * Calculate appropriate zoom level for bounds
    * Returns the maximum zoom level that cannot fully cover the bounds
    */
-  static calculateZoom(bounds: GeoBounds): number {
-    const latRange = bounds.maxLat - bounds.minLat;
-    const lngRange = bounds.maxLng - bounds.minLng;
-    
-    // Calculate zoom based on longitude range (more accurate for Web Mercator)
-    const lngZoom = Math.floor(Math.log2(360 / lngRange));
-    
-    // Calculate zoom based on latitude range
-    const latZoom = Math.floor(Math.log2(180 / latRange));
-    
-    // Use the larger zoom (higher resolution) that cannot fully cover the area
-    const zoom = Math.max(lngZoom, latZoom);
-    
-    return Math.min(Math.max(zoom, 1), 18); // Min zoom 1, Max zoom 18
-  }
+
 }

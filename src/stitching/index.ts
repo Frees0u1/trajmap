@@ -16,7 +16,8 @@ export class StitchingService {
   static stitchAndCrop(
     tileGrid: TileGrid,
     targetBounds: GeoBounds,
-    trackRegion: TrackRegion
+    trackRegion: TrackRegion,
+    zoom: number
   ): StitchingResult {
     // Calculate the full stitched image dimensions
     const tilesPerRow = Math.sqrt(tileGrid.tiles.length);
@@ -29,7 +30,8 @@ export class StitchingService {
       targetBounds,
       tileGrid.bounds,
       fullWidth,
-      fullHeight
+      fullHeight,
+      zoom
     );
 
     // Validate pixel bounds
@@ -112,13 +114,15 @@ export class StitchingService {
     targetBounds: GeoBounds,
     imageBounds: GeoBounds,
     imageWidth: number,
-    imageHeight: number
+    imageHeight: number,
+    zoom: number
   ): PixelBounds {
     return MercatorUtil.geoBoundsToPixelBounds(
       targetBounds,
       imageBounds,
       imageWidth,
-      imageHeight
+      imageHeight,
+      zoom
     );
   }
 
