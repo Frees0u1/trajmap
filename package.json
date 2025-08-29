@@ -1,6 +1,6 @@
 {
   "name": "trajmap",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "GPS trajectory rendering library with map tile backgrounds",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
