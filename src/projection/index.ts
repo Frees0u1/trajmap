@@ -22,7 +22,7 @@ export class ProjectionService {
     imageHeight: number,
     zoom: number,
     lineColor: string = '#FF5500',
-    lineWidth: number = 3
+    lineWidth: number = 3,
   ): Promise<ProjectionResult> {
     if (gpsPoints.length === 0) {
       throw new Error('No GPS points to project');
@@ -73,8 +73,14 @@ export class ProjectionService {
       ctx.fill();
     }
     
+    // Calculate pixel bounds for the trajectory
+    const pixelBounds = ProjectionService.calculateTrajectoryPixelBounds(pixelPoints);
+    
     return {
-      finalImage: canvas.toBuffer('image/png')
+      finalImage: canvas.toBuffer('image/png'),
+      gpsPoints: gpsPoints,
+      bounds: mapBounds,
+      pixelBounds: pixelBounds,
     };
   }
 

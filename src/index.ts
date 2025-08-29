@@ -20,14 +20,14 @@ export { GeoUtil } from './utils/geo';
 export { PolylineUtil } from './utils/polyline';
 
 // Main rendering pipeline
-import { TrajmapConfig, RenderResult, LatLng, GeoBounds, PixelPoint } from './types';
-import { PreprocessingService } from './preprocessing';
+import { TrajmapConfig, RenderResult } from './types';
 import { BoundaryService } from './boundary';
 import { TileService } from './tiles';
 import { StitchingService } from './stitching';
 import { ProjectionService } from './projection';
 import { RenderService } from './render';
 import { MercatorUtil } from './utils/mercator';
+import { PreprocessingService } from './preprocessing';
 
 /**
  * Main TrajMap class
@@ -36,17 +36,17 @@ export class TrajMap {
   /**
    * Render GPS trajectory to map image
    */
-  static async render(config: TrajmapConfig): Promise<RenderResult> {
+  static async render(trajmapConfig: TrajmapConfig): Promise<RenderResult> {
     try {
       // Step 1: Preprocessing - decode polyline and validate config
-      const preprocessingResult = PreprocessingService.process(config);
-      const { gpsPoints, config: processedConfig } = preprocessingResult;
+      const preprocessingResult = PreprocessingService.process(trajmapConfig);
+      const { gpsPoints, config } = preprocessingResult;
 
       // Step 2: Boundary determination - calculate bounds and zoom
       const boundaryResult = BoundaryService.calculateBounds(
         gpsPoints,
-        processedConfig.trackRegion,
-        processedConfig.expansionRegion
+        config.trackRegion,
+        config.expansionRegion
       );
       const { bounds } = boundaryResult;
 
@@ -58,7 +58,7 @@ export class TrajMap {
       // Step 4: Tile fetching - get tile data
       const fetchedTileGrid = await TileService.fetchTileGrid(
         tileGrid,
-        processedConfig.retina || false
+        config.retina || false
       );
 
       // Step 5: Stitching and cropping - create base map image
@@ -73,11 +73,11 @@ export class TrajMap {
       const imageHeight = stitchingResult.pixelBounds.maxY - stitchingResult.pixelBounds.minY;
       
       // Calculate target dimensions based on trackRegion and expansionRegion
-      let targetWidth = processedConfig.trackRegion.width;
-      let targetHeight = processedConfig.trackRegion.height;
+      let targetWidth = config.trackRegion.width;
+      let targetHeight = config.trackRegion.height;
       
-      if (processedConfig.expansionRegion) {
-        const expansion = processedConfig.expansionRegion;
+      if (config.expansionRegion) {
+        const expansion = config.expansionRegion;
         const leftExpansion = (expansion.leftPercent || 0) * targetWidth;
         const rightExpansion = (expansion.rightPercent || 0) * targetWidth;
         const upExpansion = (expansion.upPercent || 0) * targetHeight;
@@ -94,19 +94,15 @@ export class TrajMap {
         imageWidth,
         imageHeight,
         tileResult.zoom,
-        processedConfig.lineColor || '#FF5500',
-        processedConfig.lineWidth || 3
+        config.lineColor || '#FF5500',
+        config.lineWidth || 3
       );
 
       // Step 7: Format final result using RenderService
       return await RenderService.formatResult(
-        projectionResult.finalImage,
-        preprocessingResult.gpsPoints,
-        stitchingResult.bounds,
-        targetWidth,
-        targetHeight,
-        tileResult.zoom,
-        processedConfig.retina || false
+        projectionResult,
+        config,
+        zoom
       );
     } catch (error) {
       throw new Error(`TrajMap rendering failed: ${error}`);
@@ -118,12 +114,5 @@ export class TrajMap {
    */
   static validateConfig(config: TrajmapConfig): void {
     PreprocessingService.validateConfig(config);
-  }
-
-  /**
-   * Get library version
-   */
-  static getVersion(): string {
-    return '1.0.0';
   }
 }

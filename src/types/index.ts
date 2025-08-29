@@ -104,6 +104,9 @@ export interface StitchingResult {
 
 export interface ProjectionResult {
   finalImage: Buffer;
+  gpsPoints: LatLng[];
+  bounds: GeoBounds;
+  pixelBounds: PixelBounds;
 }
 
 export interface RenderResult {

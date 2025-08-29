@@ -14,11 +14,18 @@ class E2ETest {
   private outputPath: string;
   private trajmapConfig: TrajmapConfig;
   
-
-  constructor(polyline: string, config: TrajmapConfig) {
+  constructor(polyline: string, outputPath?: string, config?: TrajmapConfig) {
     this.polyline = polyline;
-    this.outputPath = path.join(__dirname, '../output/e2e-test.png');
-    this.trajmapConfig = config;
+    this.outputPath = outputPath || path.join(__dirname, '../output/e2e-test.png');
+    this.trajmapConfig = config || {
+      polyline: polyline,
+      trackRegion: { width: 100, height: 100 },
+      expansionRegion: { downPercent: 0.5 },
+      output: this.outputPath,
+      lineColor: '#FF5500',
+      lineWidth: 4,
+      retina: true
+    };
   }
 
   /**
@@ -54,22 +61,31 @@ class E2ETest {
       console.log(`📊 Result contains ${result.points.length} trajectory points`);
       console.log(`🖼️  Image data size: ${result.data.length} characters (base64)`);
 
-      // Save the result to file
-      console.log('💾 Saving result to file...');
-      await RenderService.saveToFile(result, this.outputPath);
+      // Save the image to file
+      console.log('💾 Saving image to file...');
+      const base64Data = result.data.replace(/^data:image\/png;base64,/, '');
+      const outputDir = path.dirname(this.outputPath);
       
+      // Ensure output directory exists
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+      
+      fs.writeFileSync(this.outputPath, base64Data, 'base64');
+      console.log(`✅ Image saved to: ${this.outputPath}`);
+
       // Display summary
       console.log('\n📋 Test Summary:');
       console.log(`   ✅ Polyline processed successfully`);
       console.log(`   ✅ ${result.points.length} GPS points converted to pixels`);
-      console.log(`   ✅ Image rendered and saved to ${this.outputPath}`);
+      console.log(`   ✅ Image rendered as base64 data`);
       console.log(`   ⏱️  Total processing time: ${duration}ms`);
       
+
       // Display first few pixel points as sample
       if (result.points.length > 0) {
         console.log('\n📍 Sample pixel coordinates:');
-        const sampleCount = Math.min(5, result.points.length);
-        for (let i = 0; i < sampleCount; i++) {
+        for (let i = 0; i < result.points.length; i++) {
           const point = result.points[i];
           console.log(`   Point ${i + 1}: (${point.x.toFixed(2)}, ${point.y.toFixed(2)})`);
         }
@@ -93,20 +109,23 @@ class E2ETest {
 async function main() {
   const polyline = "}t~FqypxRiEx@@sGmBAsCxMkGvMFxDfCnFtT`GbTpN~@iAzUqLpT_GnReNhq@{AdEoAhD_Ev@uDtBsz@hAeL~Vuh@j@uD]yNfA_G~_@ah@Wq@t@VdCyDyC|DwAmCoDiBMeJkCyFlIyCjEWo@eRx@kCgDiEtB}CKaFmOeBAkGo@gKyFg@cX{MlDiJiBm@qAgC{AIjIwQ|DuDc@`@dWgd@uSwLmEsFiAyKnDuMsB}GcKyN}PhO{O~J_WvJiLjCiAYk@gHvB{@eA}@V}DiAaHG{KrAkDnFqH}@sAb@oAgAcDmGqES_]bAwe@}F{t@{Ioe@cBaDiCmMQyHyLe^i@_H}BkE}H{_@a@qKuD}TmB{VgCkF@qHwCuFgY}cAI{Io@uKeS{o@{DqSsG_MxHcEmDmMCaEuDuTy@oh@}BoCsRgK`Pgb@|DaRp@PhCaFxXyz@dBoLmA{[pJgZG}MkBuDeFeDu\\{BemF_cBqN[oIlEcH`OaCnHVg@h@bAqQpi@gLjUoCjM_Ujr@c@A^kBkCBeAfEgLMsDyDaDzBq^lL{SdEyDjCsKzCuO`J_DxEuAbOgAnF}HfY|BpAzBdDxI|@f@YWiAhA[|@pCzCG_Axb@fC~JfDvF`InCrc@{@hGdArT~RDdAcFxFxKrKeS|RhHlIeE|EChBrIrEuDdHaCl[HzJ|@j@pBh[_@vHuCnKkKbUwPtVgRzULbAtMpFyNsD{JxRaYhMgPfSpFjG}TrScCo@gHvGqAWqB~AmLjQqIxHiAlGgDjHuPtPyFlQwPdDkGhI_ApEOtCn@~@fNJdJhDE|AiFxHkDzJQnR|TjUhJdSjG~DrTjBbSrG_@zCtA`@}BhFtD|CNpFgAbM|DnXY~NoQw@cLpDoHCmAu@eJjDcc@uDOhAtJpQtS`V~A~Da@rIeLrSaGeDwGa@mHiE{GaBoYx@_Io@uYkMmAt@dA|@kUtk@wJ~HbN`K_CjFfA|BZdHlKA`FqAlVpT_F`Fu@xELtBxGlEtBtEiCtNhFxRwDxMlo@vVGpAz@j@gDhPwPbXqA`FMtG~B`\\cIhYk@~FvB`LdCvFmBvJmCdCkCdHpBvSjQzx@hBlQ|FjWIzf@zEpYqCnw@yGnUpAxUtGt@zd@mArZlCv^hHz@rADlG|b@uDbWoLhT_PjBmEbGkCkCeG\\iApK_Dzh@{Fzf@sXxGYbMnBfReAhJwGfv@m\\lKgI~Af@dHsK|\\mUjZwBh^Cxe@{BpMsJ|J}BlJyEbLwIvNaQhn@cOsB~@}DuD{NkHsJoDmI}@gCiHEmCnFqNtBeO~AD"
   
-  const test = new E2ETest(polyline, {
-        polyline: polyline,
-        trackRegion: {
-          width: 800,
-          height: 600
-        },
-        expansionRegion: {
-          downPercent: 0.5
-        },
-        output: './output/test.png',
-        lineColor: '#FF5500',
-        lineWidth: 4,
-        retina: true
-      });
+  const outputPath = './output/test.png';
+  const config = {
+    polyline: polyline,
+    trackRegion: {
+      width: 800,
+      height: 800
+    },
+    expansionRegion: {
+      downPercent: 0.5
+    },
+    output: outputPath,
+    lineColor: '#FF5500',
+    lineWidth: 4,
+    retina: true
+  };
+  
+  const test = new E2ETest(polyline, outputPath, config);
   await test.run();
 }
 

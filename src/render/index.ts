@@ -1,5 +1,5 @@
 import { Canvas, createCanvas, loadImage } from 'canvas';
-import { RenderResult, PixelPoint, LatLng, GeoBounds } from '../types';
+import { RenderResult, PixelPoint, LatLng, GeoBounds, ProjectionResult, TrackRegion, ExpansionRegion, TrajmapConfig } from '../types';
 import { MercatorUtil } from '../utils/mercator';
 
 /**
@@ -8,43 +8,85 @@ import { MercatorUtil } from '../utils/mercator';
 export class RenderService {
   /**
    * Convert projection result to final render result
-   * @param finalImage - The projected image buffer
-   * @param polylinePoints - Original GPS coordinates of the trajectory
-   * @param bounds - Geographic bounds of the image
-   * @param imageWidth - Width of the image in pixels
-   * @param imageHeight - Height of the image in pixels
-   * @param zoom - Zoom level used for the map
-   * @param retina - Whether retina/high-DPI tiles were used
+   * @param projectionResult - The projection result containing image and metadata
+   * @param trackRegion - Track region configuration for output dimensions
+   * @param expansionRegion - Optional expansion region configuration
    * @returns RenderResult with base64 image and pixel coordinates
    */
   static async formatResult(
-    finalImage: Buffer,
-    polylinePoints: LatLng[],
-    bounds: GeoBounds,
-    imageWidth: number,
-    imageHeight: number,
+    projectionResult: ProjectionResult,
+    config: TrajmapConfig,
     zoom: number,
-    retina: boolean = false
   ): Promise<RenderResult> {
-    // Convert image buffer to base64
-    const base64Image = finalImage.toString('base64');
+    // Calculate final output dimensions based on trackRegion and expansion
+    const { finalWidth, finalHeight } = this.calculateOutputDimensions(
+      config.trackRegion,
+      config.expansionRegion
+    );
     
-    // Convert GPS coordinates to pixel coordinates
-    const pixelPoints: PixelPoint[] = polylinePoints.map(point => {
-      return MercatorUtil.latLngToPixel(
+    // Resize the projected image to match output dimensions
+    const resizedImage = await this.resizeImage(
+      projectionResult.finalImage,
+      finalWidth,
+      finalHeight
+    );
+    
+    // Convert resized image to base64
+    const base64Image = resizedImage.toString('base64');
+    
+    // Calculate scale factors for pixel coordinate conversion
+    const scaleX = finalWidth / projectionResult.pixelBounds.maxX;
+    const scaleY = finalHeight / projectionResult.pixelBounds.maxY;
+    
+    // Convert GPS coordinates to pixel coordinates based on output dimensions
+    const pixelPoints: PixelPoint[] = projectionResult.gpsPoints.map(point => {
+      const originalPixel = MercatorUtil.latLngToPixel(
         point,
-        bounds,
-        imageWidth,
-        imageHeight,
+        projectionResult.bounds,
+        projectionResult.pixelBounds.maxX,
+        projectionResult.pixelBounds.maxY,
         zoom,
-        retina
+        config.retina,
       );
+      
+      // Scale to output dimensions
+      return {
+        x: originalPixel.x * scaleX,
+        y: originalPixel.y * scaleY
+      };
     });
     
     return {
       data: base64Image,
       points: pixelPoints
     };
+  }
+  
+  /**
+   * Calculate output dimensions based on track region and expansion
+   * @param trackRegion - Track region configuration
+   * @param expansionRegion - Optional expansion region configuration
+   * @returns Final width and height for output
+   */
+  private static calculateOutputDimensions(
+    trackRegion: TrackRegion,
+    expansionRegion?: ExpansionRegion
+  ): { finalWidth: number; finalHeight: number } {
+    let finalWidth = trackRegion.width;
+    let finalHeight = trackRegion.height;
+    
+    if (expansionRegion) {
+      // Apply expansion percentages
+      const leftExpansion = expansionRegion.leftPercent || 0;
+      const rightExpansion = expansionRegion.rightPercent || 0;
+      const upExpansion = expansionRegion.upPercent || 0;
+      const downExpansion = expansionRegion.downPercent || 0;
+      
+      finalWidth = Math.round(finalWidth * (1 + leftExpansion + rightExpansion));
+      finalHeight = Math.round(finalHeight * (1 + upExpansion + downExpansion));
+    }
+    
+    return { finalWidth, finalHeight };
   }
   
   /**
