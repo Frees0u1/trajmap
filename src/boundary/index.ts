@@ -22,28 +22,30 @@ export class BoundaryService {
       throw new Error('Cannot calculate bounds from empty GPS points');
     }
 
-    // Calculate initial bounds from GPS points (bound0)
-    const bound0 = GeoUtil.calculateBounds(gpsPoints);
+    // Calculate initial bounds from GPS points (step 1)
+    const step1InitBound = GeoUtil.calculateBounds(gpsPoints);
 
-    // Add default 10% buffer according to architecture requirements (bound1)
-    // Formula: (length + width) / 2 * 10%
-    const bound1 = GeoUtil.expandBufferBounds(bound0, 10);
+    // Add default 10% buffer according to architecture requirements (step 2)
+    // Buffer calculation: (width + height) / 2 * 10%
+    const step2BufferBound = GeoUtil.expandBufferBounds(step1InitBound, 10);
 
-    // Adjust bounds to match track region aspect ratio (bound2)
-    const bound2 = GeoUtil.adjustBoundsToAspectRatio(bound1, trackRegion);
+    // Adjust bounds to match track region aspect ratio (step 3)
+    const step3TrackBound = GeoUtil.adjustBoundsToAspectRatio(step2BufferBound, trackRegion);
 
-    // Apply expansion region if provided (bound3)
-    let bound3 = bound2;
+    // Apply expansion region if provided (step 4)
+    let step4ExpansionBound = step3TrackBound;
     if (expansionRegion) {
-      bound3 = GeoUtil.applyExpansionRegion(bound2, expansionRegion);
+      step4ExpansionBound = GeoUtil.applyExpansionRegion(step3TrackBound, expansionRegion);
     }
 
     return {
-      bounds: bound3,  // 最终边界框
-      bound0,  // 初始轨迹框
-      bound1,  // 10% buffer框
-      bound2,  // 适配trackRegion的扩展框
-      bound3   // 适配expansion的扩展框
+      bounds: step4ExpansionBound,  // Final boundary box
+      historyBounds: {
+        step1InitBound,
+        step2BufferBound,
+        step3TrackBound,
+        step4ExpansionBound
+      }
     };
   }
 

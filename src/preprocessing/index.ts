@@ -59,9 +59,5 @@ export class PreprocessingService {
     if (config.trackRegion.width <= 0 || config.trackRegion.height <= 0) {
       throw new Error('Track region dimensions must be positive');
     }
-
-    if (!config.output) {
-      throw new Error('Output path is required');
-    }
   }
 }

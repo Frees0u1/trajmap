@@ -20,7 +20,6 @@ class E2ETest {
     this.trajmapConfig = config || {
       trackRegion: { width: 100, height: 100 },
       expansionRegion: { downPercent: 0.5 },
-      output: this.outputPath,
       lineColor: '#FF5500',
       lineWidth: 4,
       retina: true
@@ -117,7 +116,6 @@ async function main() {
     expansionRegion: {
       downPercent: 0.5
     },
-    output: outputPath,
     lineColor: '#FF5500',
     lineWidth: 4,
     marker: {

@@ -70,13 +70,12 @@ export interface TileGrid {
 export interface TrajmapConfig {
   trackRegion: TrackRegion;
   expansionRegion?: ExpansionRegion;
-  output: string;
   lineColor?: string;
   lineWidth?: number;
   retina?: boolean;
   marker?: {
-    start?: string; // 支持图形选项如 'circle', 'square'
-    end?: string;   // 支持图形选项如 'circle', 'square'
+    start?: string; // 'circle', 'square', 'triangle'
+    end?: string;   // 'circle', 'square', 'triangle'
   };
 }
 
@@ -86,12 +85,16 @@ export interface PreprocessingResult {
   config: TrajmapConfig;
 }
 
+export interface HistoryBounds {
+  step1InitBound: GeoBounds;      // Initial trajectory bounds
+  step2BufferBound: GeoBounds;    // 10% buffer bounds
+  step3TrackBound: GeoBounds;     // Track region adjusted bounds
+  step4ExpansionBound: GeoBounds; // Final expansion bounds
+}
+
 export interface BoundaryResult {
-  bounds: GeoBounds;  // 最终边界框
-  bound0: GeoBounds;  // 初始轨迹框
-  bound1: GeoBounds;  // 10% buffer框
-  bound2: GeoBounds;  // 适配trackRegion的扩展框
-  bound3: GeoBounds;  // 适配expansion的扩展框
+  bounds: GeoBounds;        // Final boundary box
+  historyBounds: HistoryBounds;
 }
 
 export interface TileResult {

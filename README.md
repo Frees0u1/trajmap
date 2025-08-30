@@ -86,8 +86,7 @@ const result = await TrajMap.render(
     trackRegion: {
       width: 800,
       height: 600
-    },
-    output: 'trajectory.png'
+    }
   }
 );
 
@@ -107,7 +106,6 @@ const config: TrajmapConfig = {
     width: 1200,
     height: 800
   },
-  output: './output/my-trajectory.png',
   
   // Optional parameters
   lineColor: '#FF5500',      // Trajectory color

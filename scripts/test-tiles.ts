@@ -144,10 +144,10 @@ class TilesTester {
     };
     
     console.log('   边界信息:');
-    printBoundInfo('bound0 (初始)', this.boundaryResult.bound0);
-    printBoundInfo('bound1 (10% buffer)', this.boundaryResult.bound1);
-    printBoundInfo('bound2 (trackRegion)', this.boundaryResult.bound2);
-    printBoundInfo('bound3 (expansion)', this.boundaryResult.bound3);
+    printBoundInfo('step1InitBound (initial)', this.boundaryResult.historyBounds.step1InitBound);
+    printBoundInfo('step2BufferBound (10% buffer)', this.boundaryResult.historyBounds.step2BufferBound);
+    printBoundInfo('step3TrackBound (track region)', this.boundaryResult.historyBounds.step3TrackBound);
+    printBoundInfo('step4ExpansionBound (expansion)', this.boundaryResult.historyBounds.step4ExpansionBound);
     printBoundInfo('最终边界', this.boundaryResult.bounds);
     console.log(`   - zoom: ${this.zoom}`);
   }
@@ -399,33 +399,11 @@ class TilesTester {
     };
     
     // 绘制所有边界框
-    drawBoundaryBox(this.boundaryResult.bound0, '#0000ff', 2, [8, 4], 'bound0 (初始)');
-    drawBoundaryBox(this.boundaryResult.bound1, '#0000f0', 2, [8, 4], 'bound1 (10% buffer)');
-    drawBoundaryBox(this.boundaryResult.bound2, '#ff8800', 3, [12, 6], 'bound2 (trackRegion)');
-    drawBoundaryBox(this.boundaryResult.bound3, '#ff0000', 3, [15, 5], 'bound3 (expansion)');
+    drawBoundaryBox(this.boundaryResult.historyBounds.step1InitBound, '#0000ff', 2, [8, 4], 'step1InitBound (initial)');
+    drawBoundaryBox(this.boundaryResult.historyBounds.step2BufferBound, '#0000f0', 2, [8, 4], 'step2BufferBound (10% buffer)');
+    drawBoundaryBox(this.boundaryResult.historyBounds.step3TrackBound, '#ff8800', 3, [12, 6], 'step3TrackBound (track region)');
+    drawBoundaryBox(this.boundaryResult.historyBounds.step4ExpansionBound, '#ff0000', 3, [15, 5], 'step4ExpansionBound (expansion)');
     drawBoundaryBox(this.boundaryResult.bounds, '#ff0000', 3, [], '最终边界');
-    
-    // 绘制连接四个边界框的polyline
-    const bounds = [this.boundaryResult.bound0, this.boundaryResult.bound1, this.boundaryResult.bound2, this.boundaryResult.bound3];
-    this.ctx.strokeStyle = '#00ff00';
-    this.ctx.lineWidth = 3;
-    this.ctx.setLineDash([10, 5]);
-    
-    this.ctx.beginPath();
-    for (let i = 0; i < bounds.length; i++) {
-      const bound = bounds[i];
-      // 计算边界框的中心点
-      const centerLat = (bound.minLat + bound.maxLat) / 2;
-      const centerLng = (bound.minLng + bound.maxLng) / 2;
-      const centerPixel = convertToPixel({ lat: centerLat, lng: centerLng });
-      
-      if (i === 0) {
-        this.ctx.moveTo(centerPixel.x, centerPixel.y);
-      } else {
-        this.ctx.lineTo(centerPixel.x, centerPixel.y);
-      }
-    }
-    this.ctx.stroke();
     
     // 重置样式
     this.ctx.setLineDash([]);

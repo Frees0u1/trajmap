@@ -22,7 +22,7 @@
    - 起点标记（绿色圆点）
    - 终点标记（红色圆点）
    - 边界辅助线（红色虚线框）
-   - bound0-bound3标签和坐标
+   - step1InitBound-step4ExpansionBound labels and coordinates
 
 ## 使用方法
 
@@ -103,10 +103,10 @@ interface TestConfig {
 
 生成的图片中包含四个边界点的标注：
 
-- **bound0** (左上角): (minLng, maxLat)
-- **bound1** (右上角): (maxLng, maxLat) 
-- **bound2** (右下角): (maxLng, minLat)
-- **bound3** (左下角): (minLng, minLat)
+- **step1InitBound** (top-left): (minLng, maxLat)
+- **step2BufferBound** (top-right): (maxLng, maxLat)
+- **step3TrackBound** (bottom-right): (maxLng, minLat)
+- **step4ExpansionBound** (bottom-left): (minLng, minLat)
 
 ## 依赖要求
 
