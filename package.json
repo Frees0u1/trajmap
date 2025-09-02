@@ -22,6 +22,14 @@
   ],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Frees0u1/trajmap.git"
+  },
+  "homepage": "https://github.com/Frees0u1/trajmap#readme",
+  "bugs": {
+    "url": "https://github.com/Frees0u1/trajmap/issues"
+  },
   "engines": {
     "node": ">=14.0.0"
   },

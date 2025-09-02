@@ -133,3 +133,7 @@ const result = await TrajMap.render(polyline, config);
 console.log('Base64 image data:', result.data);
 console.log('Trajectory pixel coordinates:', result.points);
 ```
+
+## Links
+
+- GitHub: [Frees0u1/trajmap](https://github.com/Frees0u1/trajmap)
