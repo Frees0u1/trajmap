@@ -1,6 +1,21 @@
 # TrajMap
 
-A high-performance GPS trajectory rendering library that transforms Polyline-encoded route data into beautiful PNG images with map tile backgrounds.
+[![npm version](https://img.shields.io/npm/v/trajmap.svg)](https://www.npmjs.com/package/trajmap)
+[![license](https://img.shields.io/npm/l/trajmap.svg)](./LICENSE)
+
+Render GPS routes as PNG map images in Node.js. Give it an encoded polyline (e.g. the `map.summary_polyline` of a Strava activity) and get back a static map image with the route drawn on a real basemap — no browser or headless Chrome needed.
+
+<p>
+  <img src="https://raw.githubusercontent.com/Frees0u1/trajmap/main/docs/images/central-park.png" alt="Route around Central Park, New York, rendered by trajmap" width="49%">
+  <img src="https://raw.githubusercontent.com/Frees0u1/trajmap/main/docs/images/marina-bay.png" alt="Route around Marina Bay, Singapore, rendered by trajmap" width="49%">
+</p>
+
+Useful for activity thumbnails, dashboards, social share cards, emails and anywhere you need a static route map image on the server.
+
+## Before You Start
+
+- **CARTO API key (required for the default basemap).** Get one free at <https://carto.com/basemaps/apikey> and set `CARTO_API_KEY`, or pass `tiles.apiKey`. Without it every tile renders as "API KEY REQUIRED". See [Map Tiles & API Key](#map-tiles--api-key).
+- **Native `canvas` dependency.** trajmap draws with [node-canvas](https://github.com/Automattic/node-canvas). Prebuilt binaries cover most platforms; on others (e.g. Alpine Linux, some ARM images) you need the system libraries listed in the [node-canvas install guide](https://github.com/Automattic/node-canvas#compiling).
 
 ## Features
 
@@ -117,12 +132,10 @@ const config: TrajmapConfig = {
     apiKey: process.env.CARTO_API_KEY  // CARTO basemaps API key
   },
   
-  // Region expansion configuration
+  // Region expansion configuration: extra map area beyond the track region.
+  // At most one direction may be set.
   expansionRegion: {
-    upPercent: 0.2,          // Expand upward by 20%
-    downPercent: 0.2,        // Expand downward by 20%
-    leftPercent: 0.1,        // Expand leftward by 10%
-    rightPercent: 0.1        // Expand rightward by 10%
+    downPercent: 0.2         // Expand downward by 20%
   },
   
   // Marker point configuration
