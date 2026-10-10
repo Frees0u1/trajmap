@@ -1,7 +1,7 @@
 {
   "name": "trajmap",
   "version": "0.1.4",
-  "description": "GPS trajectory rendering library with map tile backgrounds",
+  "description": "Render GPS routes (encoded polylines, e.g. from Strava) as PNG map images in Node.js",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -14,13 +14,21 @@
   "keywords": [
     "gps",
     "trajectory",
-    "map",
+    "route",
     "polyline",
-    "tiles",
-    "rendering",
+    "polyline-to-image",
+    "static-map",
+    "map-image",
+    "png",
+    "strava",
+    "cycling",
+    "running",
+    "map-tiles",
+    "carto",
+    "canvas",
     "geospatial"
   ],
-  "author": "",
+  "author": "loskyer <loskyer@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
