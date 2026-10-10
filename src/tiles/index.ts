@@ -4,8 +4,13 @@
  */
 
 import axios from 'axios';
-import { GeoBounds, TileCoord, TileData, TileGrid, TileResult } from '../types';
+import { GeoBounds, TileCoord, TileData, TileGrid, TileOptions, TileResult } from '../types';
 import { MercatorUtil } from '../utils/mercator';
+
+const DEFAULT_TILE_URL_TEMPLATE = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+const SUBDOMAINS = ['a', 'b', 'c', 'd'];
+
+let warnedMissingApiKey = false;
 
 /**
  * Tile service
@@ -66,25 +71,45 @@ export class TileService {
   }
 
   /**
-   * Get tile URL from CartoCD provider with retina support
+   * Get tile URL with retina support.
+   * Defaults to CARTO Voyager tiles, which require an API key: without one CARTO
+   * returns an "API KEY REQUIRED" placeholder image instead of the map.
    */
-  static getTileUrl(coord: TileCoord, retina: boolean = false): string {
+  static getTileUrl(coord: TileCoord, retina: boolean = false, options: TileOptions = {}): string {
     const { x, y, z } = coord;
-    const retinaParam = retina ? '@2x' : '';
-    
+    const apiKey = options.apiKey || process.env.CARTO_API_KEY || '';
+
     // Randomly select one of the four subdomains (a, b, c, d)
-    const subdomains = ['a', 'b', 'c', 'd'];
-    const subdomain = subdomains[Math.floor(Math.random() * subdomains.length)];
-    
-    // Use CartoDB Voyager style with retina support and random subdomain
-    return `https://${subdomain}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}${retinaParam}.png`;
+    const subdomain = SUBDOMAINS[Math.floor(Math.random() * SUBDOMAINS.length)];
+
+    const url = (options.urlTemplate || DEFAULT_TILE_URL_TEMPLATE)
+      .replace('{s}', subdomain)
+      .replace('{z}', String(z))
+      .replace('{x}', String(x))
+      .replace('{y}', String(y))
+      .replace('{r}', retina ? '@2x' : '')
+      .replace('{key}', encodeURIComponent(apiKey));
+
+    if (options.urlTemplate) return url;
+
+    if (!apiKey) {
+      if (!warnedMissingApiKey) {
+        warnedMissingApiKey = true;
+        console.warn(
+          '[trajmap] No CARTO API key set (config.tiles.apiKey or CARTO_API_KEY); ' +
+          'basemap tiles will render as "API KEY REQUIRED". Get a key at https://carto.com/basemaps/apikey'
+        );
+      }
+      return url;
+    }
+    return `${url}?key=${encodeURIComponent(apiKey)}`;
   }
 
   /**
    * Fetch tile data from URL
    */
-  static async fetchTile(coord: TileCoord, retina: boolean = false): Promise<TileData> {
-    const url = TileService.getTileUrl(coord, retina);
+  static async fetchTile(coord: TileCoord, retina: boolean = false, options: TileOptions = {}): Promise<TileData> {
+    const url = TileService.getTileUrl(coord, retina, options);
     
     try {
       const response = await axios.get(url, { responseType: 'arraybuffer' });
@@ -104,9 +129,9 @@ export class TileService {
   /**
    * Fetch all tiles in a grid
    */
-  static async fetchTileGrid(tileGrid: TileGrid, retina: boolean = false): Promise<TileGrid> {
-    const fetchPromises = tileGrid.tiles.map(tile => 
-      TileService.fetchTile(tile.coord, retina)
+  static async fetchTileGrid(tileGrid: TileGrid, retina: boolean = false, options: TileOptions = {}): Promise<TileGrid> {
+    const fetchPromises = tileGrid.tiles.map(tile =>
+      TileService.fetchTile(tile.coord, retina, options)
     );
 
     try {

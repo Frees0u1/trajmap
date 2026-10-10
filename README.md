@@ -4,7 +4,7 @@ A high-performance GPS trajectory rendering library that transforms Polyline-enc
 
 ## Features
 
-- 🗺️ **Map Tile Integration**: Seamlessly fetches and stitches OpenStreetMap tiles as backgrounds
+- 🗺️ **Map Tile Integration**: Seamlessly fetches and stitches CARTO basemap tiles as backgrounds (custom tile providers supported)
 - 🛣️ **Polyline Decoding**: Native support for Google Polyline encoded trajectory data
 - 🎨 **Customizable Styling**: Configure trajectory colors, line widths, and marker points
 - 📐 **Intelligent Boundary Calculation**: Automatically determines optimal display regions and zoom levels
@@ -36,7 +36,7 @@ Polyline Input → Preprocessing → Boundary Calculation → Tile Fetching → 
 #### 3. Tile Fetching
 - Calculates optimal zoom level based on boundaries and target dimensions
 - Determines required tile coordinate ranges
-- Downloads OpenStreetMap tiles in parallel
+- Downloads basemap tiles (CARTO Voyager by default) in parallel
 - Handles tile caching and error retry logic
 
 #### 4. Image Stitching
@@ -111,6 +111,11 @@ const config: TrajmapConfig = {
   lineColor: '#FF5500',      // Trajectory color
   lineWidth: 4,              // Trajectory line width
   retina: true,              // High-resolution rendering
+
+  // Tile provider configuration
+  tiles: {
+    apiKey: process.env.CARTO_API_KEY  // CARTO basemaps API key
+  },
   
   // Region expansion configuration
   expansionRegion: {
@@ -132,6 +137,29 @@ const result = await TrajMap.render(polyline, config);
 // Access result information
 console.log('Base64 image data:', result.data);
 console.log('Trajectory pixel coordinates:', result.points);
+```
+
+## Map Tiles & API Key
+
+The default basemap is [CARTO Voyager](https://carto.com/basemaps), which **requires an API key**.
+Without one, every tile renders as an "API KEY REQUIRED" placeholder. Get a key at
+<https://carto.com/basemaps/apikey>, then either:
+
+- set the `CARTO_API_KEY` environment variable (picked up automatically), or
+- pass it per render via `config.tiles.apiKey` (takes precedence over the environment variable).
+
+To use another tile provider, pass `config.tiles.urlTemplate` with these placeholders:
+`{s}` subdomain (a–d), `{z}` `{x}` `{y}` tile coordinates, `{r}` retina suffix (`@2x` or empty),
+`{key}` the URL-encoded `apiKey`. The key is only appended automatically for the default CARTO URL.
+
+```typescript
+await TrajMap.render(polyline, {
+  trackRegion: { width: 800, height: 600 },
+  tiles: {
+    urlTemplate: 'https://tiles.example.com/{z}/{x}/{y}{r}.png?token={key}',
+    apiKey: 'YOUR_TOKEN'
+  }
+});
 ```
 
 ## Links

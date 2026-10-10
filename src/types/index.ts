@@ -66,6 +66,17 @@ export interface TileGrid {
   zoom: number;
 }
 
+// Tile provider configuration
+export interface TileOptions {
+  // CARTO basemaps API key (https://carto.com/basemaps/apikey).
+  // Falls back to the CARTO_API_KEY environment variable.
+  apiKey?: string;
+  // Custom tile URL template, replacing the default CARTO Voyager tiles.
+  // Placeholders: {s} subdomain, {z} {x} {y} tile coords, {r} retina suffix ('@2x' or ''),
+  // {key} URL-encoded apiKey. The key is NOT appended automatically to custom templates.
+  urlTemplate?: string;
+}
+
 // Rendering configuration
 export interface TrajmapConfig {
   trackRegion: TrackRegion;
@@ -73,6 +84,7 @@ export interface TrajmapConfig {
   lineColor?: string;
   lineWidth?: number;
   retina?: boolean;
+  tiles?: TileOptions;
   marker?: {
     start?: string; // 'circle', 'square', 'triangle'
     end?: string;   // 'circle', 'square', 'triangle'

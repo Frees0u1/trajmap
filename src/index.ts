@@ -60,7 +60,8 @@ export class TrajMap {
       // Step 4: Tile fetching - get tile data
       const fetchedTileGrid = await TileService.fetchTileGrid(
         tileGrid,
-        validatedConfig.retina || false
+        validatedConfig.retina || false,
+        validatedConfig.tiles
       );
 
       // Step 5: Stitching and cropping - create base map image
