@@ -12,6 +12,29 @@ Render GPS routes as PNG map images in Node.js. Give it an encoded polyline (e.g
 
 Useful for activity thumbnails, dashboards, social share cards, emails and anywhere you need a static route map image on the server.
 
+## Why TrajMap?
+
+TrajMap does one thing: turn a GPS route into a map image you can **keep drawing on**.
+
+- **Pixel coordinates come back with the image.** `render()` returns the PNG *and* the pixel position of every track point (`result.points`), so you can overlay distance markers, stops, a live vehicle position or labels in exact alignment with the route.
+- **A pipeline you can take apart.** Bounds calculation, tile fetching, stitching and projection are exported as separate services (`BoundaryService`, `TileService`, `StitchingService`, `ProjectionService`, …). When `render()` doesn't fit, compose your own — e.g. a fixed map extent with stop markers for a bus route.
+- **Layout built for route cards.** `trackRegion` fixes how much space the route occupies; `expansionRegion` adds extra map on one side, leaving room for titles or stats in thumbnails and share images.
+- **Strava-ready input.** Pass an encoded polyline such as Strava's `map.summary_polyline` directly — no decode step.
+- **Server-side and self-hosted.** No browser or headless Chrome; no URL-length limit on long routes and no per-request pricing as with hosted static-map APIs. TypeScript types included, retina (`@2x`) tiles supported.
+
+### How it compares
+
+| | trajmap | [staticmaps](https://www.npmjs.com/package/staticmaps) | Hosted static map APIs (Mapbox, Google) |
+|---|---|---|---|
+| Encoded polyline input | ✅ native | decode first | ✅ |
+| Pixel coordinates of the route | ✅ | — | — |
+| Composable pipeline stages | ✅ | — | — |
+| Markers, text, polygons | start/end markers only | ✅ | ✅ |
+| Long routes | no limit | no limit | limited by URL length |
+| Runs in your process | ✅ (`canvas`) | ✅ (`sharp`) | network API, per-request pricing |
+
+If you need rich map annotations (image markers, text, polygons) out of the box today, `staticmaps` is the more complete choice; TrajMap focuses on route images and what you build on top of them.
+
 ## Before You Start
 
 - **CARTO API key (required for the default basemap).** Get one free at <https://carto.com/basemaps/apikey> and set `CARTO_API_KEY`, or pass `tiles.apiKey`. Without it every tile renders as "API KEY REQUIRED". See [Map Tiles & API Key](#map-tiles--api-key).
@@ -52,7 +75,6 @@ Polyline Input → Preprocessing → Boundary Calculation → Tile Fetching → 
 - Calculates optimal zoom level based on boundaries and target dimensions
 - Determines required tile coordinate ranges
 - Downloads basemap tiles (CARTO Voyager by default) in parallel
-- Handles tile caching and error retry logic
 
 #### 4. Image Stitching
 - Combines multiple tiles into a complete background image
@@ -174,6 +196,17 @@ await TrajMap.render(polyline, {
   }
 });
 ```
+
+## Roadmap
+
+Planned, roughly in priority order — feedback and PRs welcome via [issues](https://github.com/Frees0u1/trajmap/issues).
+
+- [ ] **Fixed map extent** — a `bounds` option on `render()` to draw on a chosen area instead of fitting the route (today this requires composing the pipeline services yourself).
+- [ ] **Annotations** — custom markers, icons and text labels along the route, positioned by lat/lng.
+- [ ] **Tile caching and retry** — reuse downloaded tiles across renders and retry failed requests; currently one failed tile fails the whole render.
+- [ ] **Richer results** — return a `Buffer` alongside base64, plus the zoom level and geographic bounds of the image.
+- [ ] **More input formats** — GeoJSON `LineString` and GPX tracks in addition to encoded polylines.
+- [ ] **Multiple routes per image** — e.g. compare activities or show segments in different colors.
 
 ## Links
 
